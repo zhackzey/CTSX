@@ -77,6 +77,9 @@ Thread::Thread(char* threadName)
 
     userID = getuid();
     threadID = getUsableID();
+    if (threadID == -1 )
+        printf("Exceeds Maximum thread number!");
+    ASSERT(threadID != -1);
 
 #ifdef USER_PROGRAM
     space = NULL;

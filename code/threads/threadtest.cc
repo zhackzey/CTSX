@@ -35,7 +35,17 @@ SimpleThread(int which)
         currentThread->Yield();
     }
 }
-
+//----------------------------------------------------------------------
+// ThreadNumLimit
+void ThreadNumLimit()
+{
+    DEBUG('t',"Entering ThreadTest2(Num limit test)");
+    for (int i=0;i<128;++i)
+    {
+        Thread *t = new Thread("thread");
+	    printf("*** thread name %s userID %d threadID %d\n",t->getName(),t->getUserID(),t->getThreadID());
+    }
+}
 //----------------------------------------------------------------------
 // ThreadTest1
 // 	Set up a ping-pong between two threads, by forking a thread 
@@ -75,6 +85,9 @@ ThreadTest()
     case 1:
 	ThreadTest1();
 	break;
+    case 2:
+    ThreadNumLimit();
+    break;
     default:
 	printf("No test specified.\n");
 	break;
