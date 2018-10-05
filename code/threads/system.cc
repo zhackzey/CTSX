@@ -19,7 +19,7 @@ Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
 					// for invoking context switches
 
-bool threadsID_Array[MAXTHREADS];
+int threadsID_Array[MAXTHREADS];
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
 #endif

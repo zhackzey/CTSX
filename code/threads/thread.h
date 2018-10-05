@@ -138,6 +138,7 @@ class Thread {
 #endif
 };
 
+extern int getUsableID();
 // Magical machine-dependent routines, defined in switch.s
 
 extern "C" {

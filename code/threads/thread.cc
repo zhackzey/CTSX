@@ -48,12 +48,11 @@ int Thread::getThreadID()
 // scan the threadsID_Array iterably to find first zero element and return
 int getUsableID()
 {
-    for(int i=0;i<MAXTHREADS;++i)
-        if (threadsID_Array[i]==FALSE)
+    int i;
+    for(i=0;i<MAXTHREADS;++i)
+        if (threadsID_Array[i]==0)
             {
-                //allocate this ID to the thread
-                //update the flag
-                threadsID_Array[i] = TRUE;
+                threadsID_Array[i] =1;
                 return i;
             }
     // all thread ID has been allocated
@@ -77,7 +76,7 @@ Thread::Thread(char* threadName)
     status = JUST_CREATED;
 
     userID = getuid();
-    threadID = getThreadID();
+    threadID = getUsableID();
 
 #ifdef USER_PROGRAM
     space = NULL;
@@ -101,7 +100,7 @@ Thread::~Thread()
     DEBUG('t', "Deleting thread \"%s\"\n", name);
     
     //deallocate
-    threadsID_Array[threadID] = FALSE;
+    threadsID_Array[threadID] = 0;
     ASSERT(this != currentThread);
     if (stack != NULL)
 	DeallocBoundedArray((char *) stack, StackSize * sizeof(int));
