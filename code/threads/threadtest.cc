@@ -72,7 +72,39 @@ ThreadTest1()
 
     SimpleThread(0);
 }
+//----------------------------------------------------------------------
+// Print all threads
+// which: dummy
+void PrintAllThreads(int which)
+{
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    //Print the thread which is running
+    printf("name %s threadID %d status: %s \n",currentThread->getName(),currentThread->getThreadID(),currentThread->getStatus());
 
+    List * ll =new List();
+    ll = scheduler->getReadyList();
+    if(!ll->IsEmpty())
+    {
+        ll->Mapcar(ThreadPrint);
+    }
+    currentThread->Yield();
+    interrupt->SetLevel(oldLevel);
+}   
+//----------------------------------------------------------------------
+// ThreadTest3
+void ThreadTest3()
+{
+    DEBUG('t', "Entering ThreadTest3");
+
+    Thread *t1 = new Thread("thread1");
+    Thread *t2 = new Thread("thread2");
+    Thread *t3 = new Thread("thread3");
+
+    //t->Fork(SimpleThread, (void*)1);
+    t1->Fork(PrintAllThreads,(void*)1);
+    t2->Fork(PrintAllThreads,(void*)1);
+    t3->Fork(PrintAllThreads,(void*)1);
+}
 //----------------------------------------------------------------------
 // ThreadTest
 // 	Invoke a test routine.
@@ -87,6 +119,9 @@ ThreadTest()
 	break;
     case 2:
     ThreadNumLimit();
+    break;
+    case 3:
+    ThreadTest3();
     break;
     default:
 	printf("No test specified.\n");

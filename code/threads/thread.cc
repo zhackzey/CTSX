@@ -59,7 +59,12 @@ int getUsableID()
     // fail, return -1
     return -1;
 }
-
+//----------------------------------------------------------------------
+// getStatus
+const char * Thread::getStatus()
+{
+    return Status_Str[status];
+}
 //----------------------------------------------------------------------
 // Thread::Thread
 // 	Initialize a thread control block, so that we can then call

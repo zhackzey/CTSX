@@ -23,6 +23,14 @@
 #include "system.h"
 
 //----------------------------------------------------------------------
+// Scheduler::getReadyList
+// return readyList
+List * Scheduler::getReadyList()
+{
+    return readyList;
+}
+
+//----------------------------------------------------------------------
 // Scheduler::Scheduler
 // 	Initialize the list of ready but not running threads to empty.
 //----------------------------------------------------------------------
