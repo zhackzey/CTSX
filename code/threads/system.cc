@@ -19,6 +19,7 @@ Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
 					// for invoking context switches
 
+bool threadsID_Array[MAXTHREADS];
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
 #endif
@@ -80,6 +81,10 @@ Initialize(int argc, char **argv)
     int argCount;
     char* debugArgs = "";
     bool randomYield = FALSE;
+
+    //Initialize the threadsID_Array
+    for (int i=0;i<MAXTHREADS;++i)
+        threadsID_Array[i] = FALSE;
 
 #ifdef USER_PROGRAM
     bool debugUserProg = FALSE;	// single step user program

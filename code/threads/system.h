@@ -29,6 +29,9 @@ extern Interrupt *interrupt;			// interrupt status
 extern Statistics *stats;			// performance metrics
 extern Timer *timer;				// the hardware alarm clock
 
+#define MAXTHREADS 128
+extern bool threadsID_Array[MAXTHREADS] //flag array : whether this thread ID has been allocated
+
 #ifdef USER_PROGRAM
 #include "machine.h"
 extern Machine* machine;	// user program memory and registers
