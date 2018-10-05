@@ -115,6 +115,14 @@ class Thread {
     					// Allocate a stack for thread.
 					// Used internally by Fork()
 
+  private:
+    int userID;
+    int threadID;
+  
+  public:
+    int getUserID();
+    int getThreadID();
+
 #ifdef USER_PROGRAM
 // A thread running a user program actually has *two* sets of CPU registers -- 
 // one for its state while executing user code, one for its state 

@@ -19,10 +19,47 @@
 #include "switch.h"
 #include "synch.h"
 #include "system.h"
+#include "unistd.h"
 
 #define STACK_FENCEPOST 0xdeadbeef	// this is put at the top of the
 					// execution stack, for detecting 
 					// stack overflows
+
+//----------------------------------------------------------------------
+// Thread::getUserID
+// public call, returns userID
+int Thread::getUserID()
+{
+    return userID;
+}
+//----------------------------------------------------------------------
+
+//----------------------------------------------------------------------
+// Thread::getThreadID
+// public call, returns threadID
+int Thread::getThreadID()
+{
+    return threadID;
+}
+//----------------------------------------------------------------------
+
+//----------------------------------------------------------------------
+// getUsableID
+// scan the threadsID_Array iterably to find first zero element and return
+int getUsableID()
+{
+    for(int i=0;i<MAXTHREADS;++i)
+        if (threadsID_Array[i]==FALSE)
+            {
+                //allocate this ID to the thread
+                //update the flag
+                threadsID_Array[i] = TRUE;
+                return i;
+            }
+    // all thread ID has been allocated
+    // fail, return -1
+    return -1;
+}
 
 //----------------------------------------------------------------------
 // Thread::Thread
@@ -38,6 +75,10 @@ Thread::Thread(char* threadName)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+
+    userID = getuid();
+    threadID = getThreadID();
+
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
@@ -58,7 +99,9 @@ Thread::Thread(char* threadName)
 Thread::~Thread()
 {
     DEBUG('t', "Deleting thread \"%s\"\n", name);
-
+    
+    //deallocate
+    threadsID_Array[threadID] = FALSE;
     ASSERT(this != currentThread);
     if (stack != NULL)
 	DeallocBoundedArray((char *) stack, StackSize * sizeof(int));
