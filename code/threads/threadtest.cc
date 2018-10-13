@@ -124,7 +124,7 @@ void ThreadTest4()
 //----------------------------------------------------------------------
 // ThreadTest5
 // test if one thread can take over one another
-void p2(int which)
+void thread3(int which)
 {
     int num;
     
@@ -139,7 +139,7 @@ void p2(int which)
     }
     }
 }
-void p1(int which)
+void thread2(int which)
 {
     int num;
     
@@ -150,14 +150,14 @@ void p1(int which)
     if(num==0)
     {
         Thread *t2 = new Thread("thread2" ,3);
-        t2->Fork(p2,(void*)1);
+        t2->Fork(thread3,(void*)1);
     }
     }
 }
 void ThreadTest5()
 {
     Thread * t1 = new Thread("thread1",7);
-    t1->Fork(p1,(void*)1);
+    t1->Fork(thread2,(void*)1);
 }
 //----------------------------------------------------------------------
 // ThreadTest
