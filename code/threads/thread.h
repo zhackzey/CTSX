@@ -85,7 +85,7 @@ class Thread {
     void *machineState[MachineStateSize];  // all registers except for stackTop
 
   public:
-    Thread(char* debugName);		// initialize a Thread 
+    Thread(char* debugName,int _priority=10);		// initialize a Thread 
     ~Thread(); 				// deallocate a Thread
 					// NOTE -- thread being deleted
 					// must not be running when delete 
@@ -123,10 +123,13 @@ class Thread {
   private:
     int userID;
     int threadID;
+
+    int priority;
   
   public:
     int getUserID();
     int getThreadID();
+    int getPriority();
 
 #ifdef USER_PROGRAM
 // A thread running a user program actually has *two* sets of CPU registers -- 

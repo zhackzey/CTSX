@@ -42,7 +42,12 @@ int Thread::getThreadID()
     return threadID;
 }
 //----------------------------------------------------------------------
-
+// getPriority
+// return the thread's priority
+int Thread::getPriority()
+{
+    return priority;
+}
 //----------------------------------------------------------------------
 // getUsableID
 // scan the threadsID_Array iterably to find first zero element and return
@@ -59,6 +64,7 @@ int getUsableID()
     // fail, return -1
     return -1;
 }
+ 
 //----------------------------------------------------------------------
 // getStatus
 const char * Thread::getStatus()
@@ -73,7 +79,7 @@ const char * Thread::getStatus()
 //	"threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
 
-Thread::Thread(char* threadName)
+Thread::Thread(char* threadName,int _priority=10)
 {
     name = threadName;
     stackTop = NULL;
@@ -82,9 +88,16 @@ Thread::Thread(char* threadName)
 
     userID = getuid();
     threadID = getUsableID();
+    ASSERT(threadID != -1);
     if (threadID == -1 )
         printf("Exceeds Maximum thread number!");
-    ASSERT(threadID != -1);
+    if(_priority<0)
+        priority = 0;
+    else 
+        if (_priority > 10)
+            priority = 10;
+        else    
+            priority = _priority;
 
 #ifdef USER_PROGRAM
     space = NULL;
@@ -231,9 +244,13 @@ Thread::Yield ()
     
     DEBUG('t', "Yielding thread \"%s\"\n", getName());
     
+    // add this thread back to list to avoid the case
+    // where this thread has highest priority but doesn't get cpu
+    scheduler->ReadyToRun(this);
+    // find the highest priority thread
     nextThread = scheduler->FindNextToRun();
     if (nextThread != NULL) {
-	scheduler->ReadyToRun(this);
+	//scheduler->ReadyToRun(this);
 	scheduler->Run(nextThread);
     }
     (void) interrupt->SetLevel(oldLevel);

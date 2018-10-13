@@ -64,7 +64,25 @@ Scheduler::ReadyToRun (Thread *thread)
     DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
 
     thread->setStatus(READY);
-    readyList->Append((void *)thread);
+    //readyList->Append((void *)thread);
+
+    readyList->SortedInsert((void *) thread,thread->getPriority());
+
+    /* Since we now implements the scheduler as one seize-cpu edition
+       Each time one new thread is forked, it may has higher priority than
+       the current thread, so it will take over CPU.
+       Thus, we should judge if thread has higher priority than currentThread
+       in this function. If so, we call currentThread->Yield() to relinquish
+       the cpu;
+       However, if thread is currentThread itself(this can happen when currentThread
+       calls Yield), we cannot call Yield() again here. 
+    */
+
+    if(thread!=currentThread && thread->getPriority()<currentThread->getPriority())
+    {
+       printf("%s priority %d takes over %s priority %d\n",thread->getName(),thread->getPriority(),currentThread->getName(),currentThread->getPriority());
+       currentThread->Yield();
+    }
 }
 
 //----------------------------------------------------------------------
