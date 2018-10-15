@@ -64,9 +64,17 @@ Scheduler::ReadyToRun (Thread *thread)
     DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
 
     thread->setStatus(READY);
-    //readyList->Append((void *)thread);
 
-    readyList->SortedInsert((void *) thread,thread->getPriority());
+    // the following code is used for RR scheduler
+    thread->setUsedSlice(0);
+    if(thread->getMaxSlice()==0)
+    {
+        thread->setMaxSlice(2);
+    }
+    readyList->Append((void *)thread);
+
+    // the following code is used for priority-based take-over scheduler 
+    //readyList->SortedInsert((void *) thread,thread->getPriority());
 
     /* Since we now implements the scheduler as one seize-cpu edition
        Each time one new thread is forked, it may has higher priority than
@@ -78,11 +86,12 @@ Scheduler::ReadyToRun (Thread *thread)
        calls Yield), we cannot call Yield() again here. 
     */
 
-    if(thread!=currentThread && thread->getPriority()<currentThread->getPriority())
+    /*if(thread!=currentThread && thread->getPriority()<currentThread->getPriority())
     {
        printf("%s priority %d takes over %s priority %d\n",thread->getName(),thread->getPriority(),currentThread->getName(),currentThread->getPriority());
        currentThread->Yield();
     }
+    */
 }
 
 //----------------------------------------------------------------------

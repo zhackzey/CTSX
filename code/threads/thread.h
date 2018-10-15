@@ -125,11 +125,23 @@ class Thread {
     int threadID;
 
     int priority;
+
+    // for RR
+    int usedSlice;
+    int maxSlice;
+
+
   
   public:
     int getUserID();
     int getThreadID();
     int getPriority();
+
+    // for RR
+    int getUsedSlice();
+    int getMaxSlice();
+    void setUsedSlice(int time);
+    void setMaxSlice(int time);
 
 #ifdef USER_PROGRAM
 // A thread running a user program actually has *two* sets of CPU registers -- 

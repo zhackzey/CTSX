@@ -159,6 +159,34 @@ void ThreadTest5()
     Thread * t1 = new Thread("thread1",7);
     t1->Fork(thread2,(void*)1);
 }
+
+// the following function is used for testing RR
+//----------------------------------------------------------------------
+// SimpleThread2
+void SimpleThread2(int which)
+{
+    int num;
+    for(num=0;num<which +1;++num)
+    {
+	printf("*** thread %d looped %d times, used %d timeSlices\n", which,num,currentThread->getUsedSlice()+1);
+        for(int i=0;i<10;++i)
+        {
+            interrupt->OneTick();
+        }
+    }
+    currentThread->Yield();
+}
+
+void ThreadTest6()
+{
+    for(int i=0;i<5;++i)
+    {
+        Thread*t =new Thread("td");
+        t->Fork(SimpleThread2,(void*)t->getThreadID());
+    }
+    SimpleThread2(0);
+}
+
 //----------------------------------------------------------------------
 // ThreadTest
 // 	Invoke a test routine.
@@ -182,6 +210,9 @@ ThreadTest()
     break;
     case 5:
     ThreadTest5();
+    break;
+    case 6:
+    ThreadTest6();
     break;
     default:
 	printf("No test specified.\n");

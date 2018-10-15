@@ -61,8 +61,19 @@ extern void Cleanup();
 static void
 TimerInterruptHandler(int dummy)
 {
-    if (interrupt->getStatus() != IdleMode)
-	interrupt->YieldOnReturn();
+    //if (interrupt->getStatus() != IdleMode)
+	//interrupt->YieldOnReturn();
+    //printf("Time interrupt captured! ");
+    //printf("current Thread %d\n",currentThread->getThreadID());
+    if(interrupt->getStatus()!=IdleMode)
+    {
+        currentThread->setUsedSlice(currentThread->getUsedSlice()+1);
+        // if current thread has used up all its time slices,we should change
+        if(currentThread->getUsedSlice()==currentThread->getMaxSlice())
+        {
+            interrupt->YieldOnReturn();
+        }
+    }
 }
 
 //----------------------------------------------------------------------
@@ -138,8 +149,9 @@ Initialize(int argc, char **argv)
     stats = new Statistics();			// collect statistics
     interrupt = new Interrupt;			// start up interrupt handling
     scheduler = new Scheduler();		// initialize the ready queue
-    if (randomYield)				// start the timer (if needed)
-	timer = new Timer(TimerInterruptHandler, 0, randomYield);
+    //if (randomYield)				// start the timer (if needed)
+	//timer = new Timer(TimerInterruptHandler, 0, randomYield);
+    timer = new Timer(TimerInterruptHandler, 0, false);
 
     threadToBeDestroyed = NULL;
 

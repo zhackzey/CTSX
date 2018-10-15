@@ -64,12 +64,41 @@ int getUsableID()
     // fail, return -1
     return -1;
 }
- 
+
+
 //----------------------------------------------------------------------
 // getStatus
 const char * Thread::getStatus()
 {
     return Status_Str[status];
+}
+
+//----------------------------------------------------------------------
+// getUsedSlice
+int Thread::getUsedSlice()
+{
+    return usedSlice;
+}
+
+//----------------------------------------------------------------------
+// getMaxSlice
+int Thread::getMaxSlice()
+{
+    return maxSlice;
+}
+
+//----------------------------------------------------------------------
+// setUsedSlice
+void Thread::setUsedSlice(int time)
+{   
+    usedSlice  =time;
+}
+
+//----------------------------------------------------------------------
+// setMaxSlice
+void Thread::setMaxSlice(int time)
+{
+    maxSlice = time;
 }
 //----------------------------------------------------------------------
 // Thread::Thread
@@ -98,6 +127,11 @@ Thread::Thread(char* threadName,int _priority=10)
             priority = 10;
         else    
             priority = _priority;
+
+
+    // for RR
+    usedSlice = 0;
+    maxSlice = 0;
 
 #ifdef USER_PROGRAM
     space = NULL;
@@ -244,15 +278,33 @@ Thread::Yield ()
     
     DEBUG('t', "Yielding thread \"%s\"\n", getName());
     
+    // the following code is used for RR
+    nextThread = scheduler->FindNextToRun();
+    if(nextThread!=NULL)
+    {
+        scheduler->ReadyToRun(this);
+        scheduler->Run(nextThread);
+    }
+    else // there is no other threads in readyList 
+    {
+        // so there is no need to switch threads
+        // we should reset the currentThread's usedSlice to 0
+        currentThread->setUsedSlice(0);
+    }
+    
+    
+    // the following code is used for priority-based take-over scheduler 
+
+    
+    
     // add this thread back to list to avoid the case
     // where this thread has highest priority but doesn't get cpu
-    scheduler->ReadyToRun(this);
+    //scheduler->ReadyToRun(this);
     // find the highest priority thread
-    nextThread = scheduler->FindNextToRun();
-    if (nextThread != NULL) {
-	//scheduler->ReadyToRun(this);
-	scheduler->Run(nextThread);
-    }
+    //nextThread = scheduler->FindNextToRun();
+    //if (nextThread != NULL) {
+	//scheduler->Run(nextThread);
+    //}
     (void) interrupt->SetLevel(oldLevel);
 }
 
