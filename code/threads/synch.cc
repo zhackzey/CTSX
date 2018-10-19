@@ -172,3 +172,39 @@ void Condition::Broadcast(Lock* conditionLock)
         }
     (void) interrupt->SetLevel(oldlevel);
 }
+
+
+Barrier::Barrier(char* debugName,int _total )
+{
+    name = debugName;
+    queue = new List;
+    total = _total;
+    already =0;
+}
+
+Barrier::~Barrier()
+{
+    delete queue;
+}
+
+void Barrier::Wait()
+{
+    IntStatus oldlevel = interrupt->SetLevel(IntOff);
+    ++already;
+    if(already < total)
+    {
+        queue->Append((void*) currentThread);
+        currentThread->Sleep();
+        (void) interrupt->SetLevel(oldlevel);
+        return;
+    }
+
+    // already == total
+    Thread * thread = (Thread*) queue->Remove();
+    while(thread)
+    {
+        scheduler->ReadyToRun(thread);
+        thread = (Thread*) queue->Remove();
+    }
+    (void) interrupt->SetLevel(oldlevel);
+}

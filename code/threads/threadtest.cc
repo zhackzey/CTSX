@@ -355,6 +355,28 @@ void PC_Test3()
     Thread * t7 = new Thread("Consumer2");
     t7->Fork(Consumer2,(void*)1);
 }
+//---------------------------------------------------------------------
+// for test of Barrier
+Barrier * barrier = new Barrier("barrier",4);
+
+void FooThread(int which)
+{
+    printf("%s has got to the point\n",currentThread->getName());
+    barrier->Wait();
+    printf("%s has finished the remaining part\n",currentThread->getName());
+}
+
+void Barrier_Test()
+{
+    Thread *t1 = new Thread("t1");
+    Thread *t2 = new Thread("t2");
+    Thread *t3 = new Thread("t3");
+    Thread *t4 = new Thread("t4");
+    t1->Fork(FooThread,(void*)1);
+    t2->Fork(FooThread,(void*)1);
+    t3->Fork(FooThread,(void*)1);
+    t4->Fork(FooThread,(void*)1);
+}
 //----------------------------------------------------------------------
 // ThreadTest
 // 	Invoke a test routine.
@@ -390,6 +412,9 @@ ThreadTest()
     break;
     case 9:
     PC_Test3();
+    break;
+    case 10:
+    Barrier_Test();
     break;
     default:
 	printf("No test specified.\n");

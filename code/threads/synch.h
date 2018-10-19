@@ -137,4 +137,24 @@ class Condition {
     // plus some other stuff you'll need to define
     List * queue;
 };
+
+
+// Barrier 
+
+class Barrier
+{
+  public:
+    Barrier(char * debugName,int _total);
+    ~Barrier();
+    char * getName() {return name;}
+
+    void Wait();
+  private:
+    char* name;
+    List * queue;
+    int total;
+    int already;
+
+};
+
 #endif // SYNCH_H
