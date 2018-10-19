@@ -245,14 +245,20 @@ void PC_Test2()
     t1->Fork(Consumer,(void*)1);
     Thread * t2 = new Thread("Producer1");
     t2->Fork(Producer,(void*)1);
+    currentThread->Yield();
     Thread * t3 = new Thread("Producer2");
     t3->Fork(Producer,(void*)1);
+    currentThread->Yield();
+
     Thread * t4 = new Thread("Producer3");
     t4->Fork(Producer,(void*)1);
+    currentThread->Yield();
     Thread * t5 = new Thread("Producer4");
     t5->Fork(Producer,(void*)1);
+    currentThread->Yield();
     Thread * t6 = new Thread("Producer5");
     t6->Fork(Producer,(void*)1);
+    currentThread->Yield();
     Thread * t7 = new Thread("Consumer2");
     t7->Fork(Consumer,(void*)1);
 }
@@ -333,14 +339,19 @@ void PC_Test3()
     t1->Fork(Consumer2,(void*)1);
     Thread * t2 = new Thread("Producer1");
     t2->Fork(Producer2,(void*)1);
+    currentThread->Yield();
     Thread * t3 = new Thread("Producer2");
     t3->Fork(Producer2,(void*)1);
+    currentThread->Yield();
     Thread * t4 = new Thread("Producer3");
     t4->Fork(Producer2,(void*)1);
+    currentThread->Yield();
     Thread * t5 = new Thread("Producer4");
     t5->Fork(Producer2,(void*)1);
+    currentThread->Yield();
     Thread * t6 = new Thread("Producer5");
     t6->Fork(Producer2,(void*)1);
+    currentThread->Yield();
     Thread * t7 = new Thread("Consumer2");
     t7->Fork(Consumer2,(void*)1);
 }
