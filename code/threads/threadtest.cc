@@ -12,7 +12,7 @@
 #include "copyright.h"
 #include "system.h"
 #include "elevatortest.h"
-
+#include "synch.h"
 // testnum is set in main.cc
 int testnum = 1;
 
@@ -186,7 +186,164 @@ void ThreadTest6()
     }
     SimpleThread2(0);
 }
+// for the test of producer and consumer problem
 
+const int buffer_size = 3;
+// the lock on buffer
+Semaphore *mutex = new Semaphore("mutex",1);
+// the count of remaining space of buffer
+Semaphore *empty = new Semaphore("empty",buffer_size);
+// the count of items in buffer
+Semaphore *full  = new Semaphore("full",0);
+// used for printf since the int value of Semaphore can not be read
+int num = 0 ; 
+// producer
+void Producer(int which)
+{
+    printf("Now thread %s is waiting to produce\n",currentThread->getName());
+    // if any remaining space?
+    empty->P();
+    // exclude other threads
+    mutex->P();
+    // enter the region 
+    printf("Thread %s has produced one item, now we have %d items in buffer\n",currentThread->getName(),++num);
+    // leave the region
+    mutex->V();
+    full->V();
+    // relinguish the cpu
+    currentThread->Yield();
+}
+
+//consumer
+void Consumer(int which)
+{
+    printf("Now thread %s is waiting to consume\n",currentThread->getName());
+    // if ang remaining items in buffer?
+    full->P();
+    // exclude other threads
+    mutex->P();
+    // enter the region
+    printf("Thread %s has consumed one item, now we have %d items in buffer\n",currentThread->getName(),--num);
+    // leave the region
+    mutex->V();
+    empty->V();
+    // relinguish the cpu
+    currentThread->Yield();
+}
+
+void PC_Test1()
+{
+    Thread * t1 = new Thread("Consumer1");
+    t1->Fork(Consumer,(void*)1);
+    Thread * t2 = new Thread("Producer1");
+    t2->Fork(Producer,(void*)1);
+}
+
+void PC_Test2()
+{
+    Thread * t1 = new Thread("Consumer1");
+    t1->Fork(Consumer,(void*)1);
+    Thread * t2 = new Thread("Producer1");
+    t2->Fork(Producer,(void*)1);
+    Thread * t3 = new Thread("Producer2");
+    t3->Fork(Producer,(void*)1);
+    Thread * t4 = new Thread("Producer3");
+    t4->Fork(Producer,(void*)1);
+    Thread * t5 = new Thread("Producer4");
+    t5->Fork(Producer,(void*)1);
+    Thread * t6 = new Thread("Producer5");
+    t6->Fork(Producer,(void*)1);
+    Thread * t7 = new Thread("Consumer2");
+    t7->Fork(Consumer,(void*)1);
+}
+//----------------------------------------------------------------------
+// For the test of Condition based Consumer and Producer Problem
+
+Condition *Full = new Condition("full");
+Condition *Empty = new Condition("empty");
+Lock * lock = new Lock("lock");
+Lock * full_lock = new Lock("full_lock");
+Lock * empty_lock = new Lock("empty_lock");
+int item = 0;
+
+void Producer2(int which)
+{
+    printf("Now thread %s is waiting to produce\n",currentThread->getName());
+    lock->Acquire();
+    if(item==buffer_size)
+    // wait on  full queue
+    {
+        // require the lock of Full condition
+        full_lock->Acquire();
+        // before we get to wait on the Full 
+        // we need to give up the lock on item
+        // otherwise other theads can not acquire that
+        lock->Release();
+        // get to wait on Full
+        Full->Wait(full_lock);
+
+        // we are waked up so we need to acquire the lock
+        // on item at first
+        lock->Acquire();
+        full_lock ->Release();
+    }
+    printf("Thread %s has produced one item, now we have %d items in buffer\n",currentThread->getName(),++item);
+    if(item ==1)
+    // we need to wake up consumer
+    {
+        // require the lock of Empty condition 
+        empty_lock->Acquire();
+        // signal one consumer
+        Empty->Signal(empty_lock);
+        empty_lock->Release();
+    }
+    lock->Release();
+}
+
+void Consumer2(int which)
+{
+    printf("Now thread %s is waiting to consume\n",currentThread->getName());
+    lock->Acquire();
+    if (item == 0)
+    // we need to wait on Empty condtion
+    {
+        // require the lock of Empty condition
+        empty_lock->Acquire();
+        lock->Release();
+        Empty->Wait(empty_lock);
+        lock->Acquire();
+        empty_lock->Release();
+    }
+    printf("Thread %s has consumed one item, now we have %d items in buffer\n",currentThread->getName(),--item);
+
+    if(item==buffer_size-1)
+    // wake up producer
+    {
+        full_lock->Acquire();
+        Full->Signal(full_lock);
+        full_lock->Release();
+    }
+    lock->Release();
+}
+
+
+void PC_Test3()
+{
+    Thread * t1 = new Thread("Consumer1");
+    t1->Fork(Consumer2,(void*)1);
+    Thread * t2 = new Thread("Producer1");
+    t2->Fork(Producer2,(void*)1);
+    Thread * t3 = new Thread("Producer2");
+    t3->Fork(Producer2,(void*)1);
+    Thread * t4 = new Thread("Producer3");
+    t4->Fork(Producer2,(void*)1);
+    Thread * t5 = new Thread("Producer4");
+    t5->Fork(Producer2,(void*)1);
+    Thread * t6 = new Thread("Producer5");
+    t6->Fork(Producer2,(void*)1);
+    Thread * t7 = new Thread("Consumer2");
+    t7->Fork(Consumer2,(void*)1);
+}
 //----------------------------------------------------------------------
 // ThreadTest
 // 	Invoke a test routine.
@@ -213,6 +370,15 @@ ThreadTest()
     break;
     case 6:
     ThreadTest6();
+    break;
+    case 7:
+    PC_Test1();
+    break;
+    case 8:
+    PC_Test2();
+    break;
+    case 9:
+    PC_Test3();
     break;
     default:
 	printf("No test specified.\n");
