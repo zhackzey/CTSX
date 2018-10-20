@@ -377,6 +377,46 @@ void Barrier_Test()
     t3->Fork(FooThread,(void*)1);
     t4->Fork(FooThread,(void*)1);
 }
+//---------------------------------------------------------------------
+// for test of RW_Lock
+RW_Lock *rw_lock = new RW_Lock ("RW_Lock");
+void Reader(int which)
+{
+    for(int i=0;i<3;++i)
+    {
+        printf("reader %d request to read\n",which);
+        rw_lock->getRLock();
+        printf("reader %d is reading\n",which);
+        currentThread->Yield();
+        rw_lock->ReleaseRLock();
+        printf("reader %d finishes reading",which);
+    }
+}
+
+void Writer(int which)
+{
+    for(int i=0;i<2;++i)
+    {
+        printf("writer %d request to write\n",which);
+        rw_lock->getWLock();
+        printf("writer %d is writing\n",which);
+        currentThread->Yield();
+        rw_lock->ReleaseWLock();
+        printf("writer %d finishes writing",which);
+    }
+}
+
+void RW_Test()
+{
+    Thread *t1 = new Thread("reader1");
+    Thread *t2 = new Thread("reader2");
+    Thread *t3 = new Thread("writer1");
+    Thread *t4 = new Thread("writer2");
+    t1->Fork(Reader,(void*)1);
+    t2->Fork(Reader,(void*)2);
+    t3->Fork(Writer,(void*)1);
+    t4->Fork(Writer,(void*)2);
+}
 //----------------------------------------------------------------------
 // ThreadTest
 // 	Invoke a test routine.
@@ -415,6 +455,9 @@ ThreadTest()
     break;
     case 10:
     Barrier_Test();
+    break;
+    case 11:
+    RW_Test();
     break;
     default:
 	printf("No test specified.\n");

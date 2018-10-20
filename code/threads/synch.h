@@ -157,4 +157,24 @@ class Barrier
 
 };
 
+// Read-Writer Lock
+class RW_Lock
+{
+  public:
+    RW_Lock(char * debugName);
+    ~RW_Lock();
+    char *getname(){return name;};
+    void getWLock();
+    void getRLock();
+    void ReleaseWLock();
+    void ReleaseRLock();
+  private:
+    int reader_cnt ;
+    char *name;
+    List* r_queue;
+    List* w_queue;
+    bool is_writing;
+    bool is_reading;
+};
+
 #endif // SYNCH_H

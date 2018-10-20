@@ -208,3 +208,78 @@ void Barrier::Wait()
     }
     (void) interrupt->SetLevel(oldlevel);
 }
+
+RW_Lock::RW_Lock(char * debugName)
+{
+    name = debugName;
+    r_queue = new List;
+    w_queue = new List;
+    is_writing = false;
+    is_reading = false;
+    reader_cnt = 0;
+}
+
+RW_Lock::~RW_Lock()
+{
+    delete r_queue;
+    delete w_queue;
+}
+
+void RW_Lock::getWLock()
+{
+    IntStatus oldlevel = interrupt->SetLevel(IntOff);
+    if(is_writing||is_reading)
+    {
+        w_queue->Append((void*) currentThread);
+        currentThread->Sleep();
+    }
+    is_writing = true;
+    (void) interrupt->SetLevel(oldlevel);
+}
+
+void RW_Lock::getRLock()
+{
+    IntStatus oldlevel = interrupt->SetLevel(IntOff);
+    if (is_writing)
+    {
+        r_queue->Append((void*)currentThread);
+        currentThread->Sleep();
+    }
+    is_reading = true;
+    reader_cnt++;
+    (void) interrupt->SetLevel(oldlevel);
+}
+
+void RW_Lock::ReleaseWLock()
+{
+    IntStatus oldlevel = interrupt->SetLevel(IntOff);
+    if(w_queue->IsEmpty()!=true)
+    {
+        Thread * thread = (Thread*) w_queue->Remove();
+        scheduler->ReadyToRun(thread);
+    }
+    else if(r_queue->IsEmpty()!=true)
+    {
+        Thread * thread = (Thread*) r_queue->Remove();
+        scheduler->ReadyToRun(thread);
+    }
+    is_writing = false;
+    (void) interrupt->SetLevel(oldlevel);
+}
+
+void RW_Lock::ReleaseRLock()
+{
+    IntStatus oldlevel = interrupt->SetLevel(IntOff);
+    reader_cnt --;
+    if(reader_cnt==0)
+    {
+        if(w_queue->IsEmpty()!=true)
+        {
+            Thread * thread = (Thread*) w_queue->Remove();
+            scheduler->ReadyToRun(thread);
+        }
+    }
+    is_reading = false;
+    (void) interrupt->SetLevel(oldlevel);
+}
+
