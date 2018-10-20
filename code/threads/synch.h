@@ -176,5 +176,4 @@ class RW_Lock
     bool is_writing;
     bool is_reading;
 };
-
 #endif // SYNCH_H

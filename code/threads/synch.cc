@@ -247,6 +247,7 @@ void RW_Lock::getRLock()
     }
     is_reading = true;
     reader_cnt++;
+    printf("Now Reader_CNT :%d\n",reader_cnt);
     (void) interrupt->SetLevel(oldlevel);
 }
 
@@ -257,11 +258,13 @@ void RW_Lock::ReleaseWLock()
     {
         Thread * thread = (Thread*) w_queue->Remove();
         scheduler->ReadyToRun(thread);
+        is_writing = true;
     }
     else if(r_queue->IsEmpty()!=true)
     {
         Thread * thread = (Thread*) r_queue->Remove();
         scheduler->ReadyToRun(thread);
+        is_reading = true;
     }
     is_writing = false;
     (void) interrupt->SetLevel(oldlevel);
@@ -271,14 +274,24 @@ void RW_Lock::ReleaseRLock()
 {
     IntStatus oldlevel = interrupt->SetLevel(IntOff);
     reader_cnt --;
+    printf("Now Reader_CNT :%d\n",reader_cnt);
+   
     if(reader_cnt==0)
     {
         if(w_queue->IsEmpty()!=true)
         {
             Thread * thread = (Thread*) w_queue->Remove();
             scheduler->ReadyToRun(thread);
+            is_writing = true;
         }
     }
+    if(r_queue->IsEmpty()!=true)
+    {
+        Thread * thread = (Thread*) r_queue->Remove();
+        scheduler->ReadyToRun(thread);
+        is_reading = true;
+    }
+
     is_reading = false;
     (void) interrupt->SetLevel(oldlevel);
 }

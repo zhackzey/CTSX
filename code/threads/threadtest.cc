@@ -11,8 +11,9 @@
 
 #include "copyright.h"
 #include "system.h"
-#include "elevatortest.h"
 #include "synch.h"
+#include "elevatortest.h"
+
 // testnum is set in main.cc
 int testnum = 1;
 
@@ -384,12 +385,15 @@ void Reader(int which)
 {
     for(int i=0;i<3;++i)
     {
-        printf("reader %d request to read\n",which);
+        printf("reader %d request to read, time : %d \n",which,i);
         rw_lock->getRLock();
+
         printf("reader %d is reading\n",which);
         currentThread->Yield();
         rw_lock->ReleaseRLock();
-        printf("reader %d finishes reading",which);
+        printf("reader %d finishes reading\n",which);
+        currentThread->Yield();
+
     }
 }
 
@@ -397,12 +401,14 @@ void Writer(int which)
 {
     for(int i=0;i<2;++i)
     {
-        printf("writer %d request to write\n",which);
+        printf("writer %d request to write, time : %d \n",which,i);
         rw_lock->getWLock();
         printf("writer %d is writing\n",which);
         currentThread->Yield();
         rw_lock->ReleaseWLock();
-        printf("writer %d finishes writing",which);
+        printf("writer %d finishes writing\n",which);
+        currentThread->Yield();
+
     }
 }
 
