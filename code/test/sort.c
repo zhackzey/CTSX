@@ -28,6 +28,7 @@ main()
 	      A[j] = A[j + 1];
 	      A[j + 1] = tmp;
     	   }
-    Halt();
-    //Exit(A[0]);		/* and then we're done -- should be 0! */
+    //Halt();
+    //Exit(0);
+    Exit(A[0]);		/* and then we're done -- should be 0! */
 }

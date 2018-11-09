@@ -80,7 +80,9 @@ Machine::Machine(bool debug)
     CheckEndian();
 
     // set bitmap ; one bit -> one physical page in main memory
-    bitmap = new BitMap(NumPhysPages);
+    bitmap = new int[NumPhysPages];
+    for(int i=0;i<NumPhysPages;++i)
+        bitmap[i] =0;
 }
 
 //----------------------------------------------------------------------
@@ -109,7 +111,7 @@ void
 Machine::RaiseException(ExceptionType which, int badVAddr)
 {
     DEBUG('m', "Exception: %s\n", exceptionNames[which]);
-    
+    //printf("Exception: %s\n",exceptionNames[which]);
 //  ASSERT(interrupt->getStatus() == UserMode);
     registers[BadVAddrReg] = badVAddr;
     DelayedLoad(0, 0);			// finish anything in progress
@@ -220,3 +222,38 @@ void Machine::WriteRegister(int num, int value)
 	registers[num] = value;
     }
 
+
+int Machine::find()
+{
+    for(int i=0;i<NumPhysPages;++i)
+    {
+        if(bitmap[i]==0)
+        {
+            bitmap[i]=1;
+            return i;
+        }
+    }
+    return -1;
+}
+
+void Machine::clear()
+{
+    for(int i=0;i<pageTableSize;++i)
+    {
+        int vpn = pageTable[i].physicalPage;
+        if(bitmap[vpn]==1)
+        {
+            bitmap[vpn]=0;
+        }
+    }
+}
+void Machine::PrintBitmap()
+{
+    printf("Bit set:\n");
+    for (int i=0;i<NumPhysPages;++i)
+    {
+        if(bitmap[i]==1)
+            printf("  %d,",i);
+    }
+    printf("\n");
+}

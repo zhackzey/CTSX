@@ -53,25 +53,19 @@ ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
 
-    if ((which == SyscallException) && (type == SC_Halt)) {
+    if ((which == SyscallException) && (type == SC_Halt)) 
+    {
 	DEBUG('a', "Shutdown, initiated by user program.\n");
-   	interrupt->Halt();
+   	printf("user program calls syscall halt\n");
+       interrupt->Halt();
     }
     else if((which==SyscallException)&&(type == SC_Exit))
     {
         printf("user program calls syscall Exit\n");
         
         // we should deallocate the physical pages allocated for this user program
-        for (int i=0;i<machine->pageTableSize;++i)
-        {
-            int vpn = machine->pageTable[i].physicalPage;
-            if(machine->bitmap->Test(vpn)==TRUE)
-            // deallocate
-                {
-                    machine->bitmap->Clear(vpn);
-                    machine->bitmap->Print();
-                }
-        }
+        machine->clear();
+        machine->PrintBitmap();
         int NextPC = machine->ReadRegister(NextPCReg);
         machine->WriteRegister(PCReg,NextPC);
     } 
