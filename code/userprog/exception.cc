@@ -61,8 +61,8 @@ ExceptionHandler(ExceptionType which)
     {
         if(machine->tlb!=NULL)
         {
-            int vpn = (unsigned) machine->registers[BadVAddrReg] /Pagesize;
-            int pos = 1;
+            int vpn = (unsigned) machine->registers[BadVAddrReg] /PageSize;
+            int pos = -1;       // tlb entry number , the tlb entry to be changed
             for (int i=0;i<TLBSize;++i)
             {
                 if(machine->tlb[i].valid==FALSE)
@@ -71,9 +71,51 @@ ExceptionHandler(ExceptionType which)
                     break;
                 }
             }
+            // all entries are valid,so we need to replace
+            // page replacement algorithm
+            if(pos==-1)
+            {
+                // FIFO
+                /*
+                   choose to replace the first entry
+                   so let entries move forward
+                   and the last entry stores the new entry
+                */
+                // choose to move into the last entry
+                /*
+                pos = TLBSize -1;
+                for (int i=0;i<TLBSize -1;++i)
+                    machine->tlb[i] = machine->tlb[i+1];
+                */
+                // LRU
+                
+                for (int i=0;i<TLBSize; ++i)
+                    if (machine->LRU_cnt [i]==TLBSize)
+                    {
+                        // choose the least recent visited entry to replace
+                        pos = i;
+                        break;
+                    }
+                    
+            }
+
+            // Since we encounter the exception of PageFaultException
+            // we need to update the LRU_cnt
+            machine->LRU_cnt[pos] = 1;
+            for (int i=0;i<TLBSize;++i)
+            {
+                if(i==pos)
+                    continue;
+                if(machine->LRU_cnt[i]==-1) //invalid
+                    continue;
+                // update the old LRU_cnt
+                machine->LRU_cnt[i] ++;
+            }
+
+            // new entry changed into TLB
             machine->tlb[pos].valid=true;
             machine->tlb[pos].virtualPage = vpn;
-            machine->tlb[pos].physicalPage = machine->PageTable[vpn].physicalPage;
+            machine->tlb[pos].physicalPage = machine->pageTable[vpn].physicalPage;
             machine->tlb[pos].use = FALSE;
             machine->tlb[pos].dirty = FALSE;
             machine->tlb[pos].readOnly = FALSE;

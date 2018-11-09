@@ -66,11 +66,16 @@ Machine::Machine(bool debug)
     for (i = 0; i < TLBSize; i++)
 	tlb[i].valid = FALSE;
     pageTable = NULL;
+
 #else	// use linear page table
     tlb = NULL;
     pageTable = NULL;
 #endif
 
+    LRU_cnt = new int [TLBSize];
+    // initialize LRU count to -1
+    for (int i=0;i<TLBSize;++i)
+        LRU_cnt [i] = -1;
     singleStep = debug;
     CheckEndian();
 }
