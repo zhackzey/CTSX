@@ -56,7 +56,34 @@ ExceptionHandler(ExceptionType which)
     if ((which == SyscallException) && (type == SC_Halt)) {
 	DEBUG('a', "Shutdown, initiated by user program.\n");
    	interrupt->Halt();
-    } else {
+    } 
+    else if(which==PageFaultException)
+    {
+        if(machine->tlb!=NULL)
+        {
+            int vpn = (unsigned) machine->registers[BadVAddrReg] /Pagesize;
+            int pos = 1;
+            for (int i=0;i<TLBSize;++i)
+            {
+                if(machine->tlb[i].valid==FALSE)
+                {
+                    pos = i;
+                    break;
+                }
+            }
+            machine->tlb[pos].valid=true;
+            machine->tlb[pos].virtualPage = vpn;
+            machine->tlb[pos].physicalPage = machine->PageTable[vpn].physicalPage;
+            machine->tlb[pos].use = FALSE;
+            machine->tlb[pos].dirty = FALSE;
+            machine->tlb[pos].readOnly = FALSE;
+        }
+        else
+        {
+            ASSERT(FALSE);
+        }
+    }
+    else  {
 	printf("Unexpected user mode exception %d %d\n", which, type);
 	ASSERT(FALSE);
     }
