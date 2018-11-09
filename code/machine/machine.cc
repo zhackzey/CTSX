@@ -78,6 +78,9 @@ Machine::Machine(bool debug)
         LRU_cnt [i] = -1;
     singleStep = debug;
     CheckEndian();
+
+    // set bitmap ; one bit -> one physical page in main memory
+    bitmap = new BitMap(NumPhysPages);
 }
 
 //----------------------------------------------------------------------

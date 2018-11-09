@@ -25,6 +25,7 @@
 #include "utility.h"
 #include "translate.h"
 #include "disk.h"
+#include "bitmap.h"
 
 // Definitions related to the size, and format of user memory
 
@@ -184,6 +185,7 @@ class Machine {
     unsigned int pageTableSize;
 
 	int* LRU_cnt;
+	BitMap* bitmap;
   private:
     bool singleStep;		// drop back into the debugger after each
 				// simulated instruction
