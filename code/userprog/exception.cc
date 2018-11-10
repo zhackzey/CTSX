@@ -83,6 +83,7 @@ ExceptionHandler(ExceptionType which)
     else if(which==PageFaultException)
     {
         if(machine->tlb!=NULL)
+        // the page is not in TLB
         {
             int vpn = (unsigned) machine->registers[BadVAddrReg] /PageSize;
             int pos = -1;       // tlb entry number , the tlb entry to be changed
@@ -144,8 +145,50 @@ ExceptionHandler(ExceptionType which)
             machine->tlb[pos].readOnly = FALSE;
         }
         else
+        // the page is not in pageTable
         {
-            ASSERT(FALSE);
+            OpenFile *openfile = fileSystem->Open("vm");
+            ASSERT(openfile!=NULL);
+            // vpn causing PageFault
+            int vpn = (unsigned) machine->registers[BadVAddrReg] /PageSize;
+            int pos = -1;       // pageTable entry number , the pageTable entry to be changed            
+            // find the unused physical page
+            pos = machine->find();
+            if(pos==-1)
+            //all physical pages are allocated
+            // we need to replace some physical page out
+            {
+                // For simplity, just choose to switch out the first physical page
+                pos = 0;
+                for (int i=0;i<machine->pageTableSize;++i)
+                {
+                    if(machine->pageTable[i].physicalPage == pos)
+                    {
+                       if(machine->pageTable[i].dirty==TRUE)
+                       // this physical page is modified
+                       // we need to write it back into disk
+                       {
+                           openfile->WriteAt(&(machine->mainMemory[pos*PageSize]),
+                            PageSize,machine->pageTable[i].virtualPage*PageSize);
+                            machine->pageTable[i].valid =FALSE;
+                            break;
+                       } 
+                    }
+                }
+            }
+
+            // now we have chosen the physical page to replace
+            // we should copy the disk physical page into memory
+            openfile->ReadAt(&(machine->mainMemory[pos*PageSize]),PageSize,vpn* PageSize);
+            machine->pageTable[vpn].valid = TRUE;
+            // pageTable 's index is its vpn
+            machine->pageTable[vpn].virtualPage = vpn;
+            machine->pageTable[vpn].physicalPage = pos;
+            machine->pageTable[vpn].use =FALSE;
+            machine->pageTable[vpn].dirty = FALSE;
+            machine->pageTable[vpn].readOnly = FALSE;
+            delete openfile;
+            //ASSERT(FALSE);
         }
     }
     else  {
