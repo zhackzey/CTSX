@@ -78,7 +78,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
 
-    ASSERT(numPages <= NumPhysPages);		// check we're not trying
+    // for lazy-loading
+    //ASSERT(numPages <= NumPhysPages);		// check we're not trying
 						// to run anything too big --
 						// at least until we have
 						// virtual memory
@@ -88,6 +89,14 @@ AddrSpace::AddrSpace(OpenFile *executable)
 // first, set up the translation 
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
+
+    // for lazy-loading
+    // since we choose not to copy any segments into memory at beginning
+    // we should make all the pageTable entries invalid
+    pageTable[i].valid = FALSE;
+    continue;
+
+    // before lazy-loading
 	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
 	//pageTable[i].physicalPage = i;
 	
@@ -111,14 +120,15 @@ AddrSpace::AddrSpace(OpenFile *executable)
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
     //bzero(machine->mainMemory, size);
-
+    
 // then, copy in the code and data segments into memory
-    if (noffH.code.size > 0) {
+//  before lazy-loding
+    /*if (noffH.code.size > 0) {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
 			noffH.code.virtualAddr, noffH.code.size);
-        /*executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
-			noffH.code.size, noffH.code.inFileAddr);
-        */
+        //executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
+		//	noffH.code.size, noffH.code.inFileAddr);
+        
        // the code segment's offset in this file
        int offset = noffH.code.inFileAddr;
         for(int i=0;i<noffH.code.size;++i)
@@ -136,9 +146,9 @@ AddrSpace::AddrSpace(OpenFile *executable)
     if (noffH.initData.size > 0) {
         DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
 			noffH.initData.virtualAddr, noffH.initData.size);
-        /*executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
-			noffH.initData.size, noffH.initData.inFileAddr);
-        */
+        //executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
+		//	noffH.initData.size, noffH.initData.inFileAddr);
+        
        int offset = noffH.initData.inFileAddr;
        for(int i=0;i<noffH.initData.size;++i)
        // copy in the data segment into memory one byte each time
@@ -150,8 +160,40 @@ AddrSpace::AddrSpace(OpenFile *executable)
            int physicalAddr = pageTable[vpn].physicalPage * PageSize + vpo;
            executable->ReadAt(&(machine->mainMemory[physicalAddr]),1,offset++);
        }
-    }
+    }*/
 
+ // now for lazy-loading
+    //creat virtual memory file
+    fileSystem->Create("virtual_memory",size);
+    OpenFile * openfile = fileSystem->Open("virtual_memory");
+    ASSERT(openfile!=NULL);
+    //  copy code segment into vm
+    if(noffH.code.size>0)
+    {
+        int pos1 = noffH.code.inFileAddr;
+        int pos2 = noffH.code.virtualAddr;
+        char tmp;
+        for(int i=0;i<noffH.code.size;++i)
+        {
+            executable->ReadAt(&tmp,1,pos1++);
+            openfile->WriteAt(&tmp,1,pos2++);
+        }
+    }
+    //  copy initData segment into vm
+    if(noffH.initData.size>0)
+    {
+        int pos1 = noffH.initData.inFileAddr;
+        int pos2 = noffH.initData.virtualAddr;
+        char tmp;
+        for(int i=0;i<noffH.initData.size;++i)
+        {
+            executable->ReadAt(&tmp,1,pos1++);
+            openfile->WriteAt(&tmp,1,pos2++);
+        }
+    }
+    // To simplify, i choose not to copy segments into memory at beginning,
+    // so the memory is clean at first
+    delete openfile;
 }
 
 //----------------------------------------------------------------------

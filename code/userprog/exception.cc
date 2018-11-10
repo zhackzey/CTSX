@@ -85,6 +85,7 @@ ExceptionHandler(ExceptionType which)
         if(machine->tlb!=NULL)
         // the page is not in TLB
         {
+            printf("TLB pageFault\n");
             int vpn = (unsigned) machine->registers[BadVAddrReg] /PageSize;
             int pos = -1;       // tlb entry number , the tlb entry to be changed
             for (int i=0;i<TLBSize;++i)
@@ -147,10 +148,13 @@ ExceptionHandler(ExceptionType which)
         else
         // the page is not in pageTable
         {
-            OpenFile *openfile = fileSystem->Open("vm");
+            
+            OpenFile *openfile = fileSystem->Open("virtual_memory");
             ASSERT(openfile!=NULL);
             // vpn causing PageFault
             int vpn = (unsigned) machine->registers[BadVAddrReg] /PageSize;
+            printf("Page %d is not in pageTable\n",vpn);
+            
             int pos = -1;       // pageTable entry number , the pageTable entry to be changed            
             // find the unused physical page
             pos = machine->find();
@@ -181,12 +185,15 @@ ExceptionHandler(ExceptionType which)
             // we should copy the disk physical page into memory
             openfile->ReadAt(&(machine->mainMemory[pos*PageSize]),PageSize,vpn* PageSize);
             machine->pageTable[vpn].valid = TRUE;
+            printf("Copy virtual page %d into memory, corresponding ppn is %d \n",vpn,pos);
+
             // pageTable 's index is its vpn
             machine->pageTable[vpn].virtualPage = vpn;
             machine->pageTable[vpn].physicalPage = pos;
             machine->pageTable[vpn].use =FALSE;
             machine->pageTable[vpn].dirty = FALSE;
             machine->pageTable[vpn].readOnly = FALSE;
+
             delete openfile;
             //ASSERT(FALSE);
         }
