@@ -206,6 +206,7 @@ AddrSpace::InitRegisters()
 
 void AddrSpace::SaveState() 
 {
+    printf("Now Making tlb ineffect\n");
     // thread switch will make tlb invalid
     for (int i=0;i<TLBSize;++i)
     {
@@ -231,7 +232,7 @@ void AddrSpace::PrintPageTable()
 {
     printf("Addrspace pageTable:\n");
     for(int i=0;i<numPages;++i)
-        printf("%d ",pageTable[i].physicalPage);
+        printf("pageTable entry %d: valid %d  vpn %d  ppn %d\n ",i,pageTable[i].valid,pageTable[i].virtualPage,pageTable[i].physicalPage);
     printf("\n");
 
 }

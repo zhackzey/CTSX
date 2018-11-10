@@ -27,39 +27,20 @@ void ForkThread(int which)
 void
 StartProcess(char *filename)
 {
-    OpenFile *executable1 = fileSystem->Open(filename);
-    OpenFile *executable2 = fileSystem->Open(filename);
-    AddrSpace *space1,*space2;
-    if (executable1 == NULL||executable2 ==NULL) {
+    OpenFile *executable = fileSystem->Open(filename);
+    AddrSpace *space;
+    if (executable == NULL) {
 	printf("Unable to open file %s\n", filename);
 	return;
     }
-    space1 = new AddrSpace(executable1);    
-    printf("First thread's addrspace initialized\n");
-    space1->PrintPageTable();
-    /*
-    Thread * thread = new Thread("second thread",1);
-    space2 = new AddrSpace(executable2);
+    space = new AddrSpace(executable);    
 
-    printf("Second thread's addrspace initialized\n");
-    space2->PrintPageTable();
-    */
-    currentThread->space = space1;
+    currentThread->space = space;
 
-    // set second thread's addrspace
-    /*
-    space2->InitRegisters();
-    space2->RestoreState();
-    thread->space=space2;
-    thread->Fork(ForkThread,(void*)1);
-    // let second thread take cpu
-    currentThread->Yield();
-    */
-    delete executable2;			// close file
-    delete executable1;
-    space1->InitRegisters();		// set the initial register values
-    space1->RestoreState();		// load page table register
-    printf("First thread started!\n");
+    
+    delete executable;			// close file
+    space->InitRegisters();		// set the initial register values
+    space->RestoreState();		// load page table register
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;
 					// the address space exits

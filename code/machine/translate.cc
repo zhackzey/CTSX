@@ -186,13 +186,15 @@ Machine::WriteMem(int addr, int size, int value)
 ExceptionType
 Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 {
-    int i;
+    
+
+	int i;
     unsigned int vpn, offset;
     TranslationEntry *entry;
     unsigned int pageFrame;
 
     DEBUG('a', "\tTranslate 0x%x, %s: ", virtAddr, writing ? "write" : "read");
-
+	//printf("\tTranslate 0x%x, %s: \n", virtAddr, writing ? "write" : "read");
 // check for alignment errors
     if (((size == 4) && (virtAddr & 0x3)) || ((size == 2) && (virtAddr & 0x1))){
 	DEBUG('a', "alignment problem at %d, size %d!\n", virtAddr, size);
@@ -207,7 +209,8 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 // from the virtual address
     vpn = (unsigned) virtAddr / PageSize;
     offset = (unsigned) virtAddr % PageSize;
-    
+    //printf("vpn : %d  offset : %d\n",vpn,offset);
+
     if (tlb == NULL) {		// => page table => vpn is index into table
 	if (vpn >= pageTableSize) {
 	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
@@ -219,7 +222,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 	    return PageFaultException;
 	}
 	entry = &pageTable[vpn];
-    } else {
+    } else {	
         for (entry = NULL, i = 0; i < TLBSize; i++)
     	    if (tlb[i].valid && (tlb[i].virtualPage == vpn)) {
 		entry = &tlb[i];			// FOUND!
@@ -260,7 +263,19 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     // if the pageFrame is too big, there is something really wrong! 
     // An invalid translation was loaded into the page table or TLB. 
     if (pageFrame >= NumPhysPages) { 
+	for (int i=0;i<TLBSize;++i)
+	{
+		printf("tlb entry %d: valid %d  vpn %d  ppn %d\n",i,tlb[i].valid,tlb[i].virtualPage,tlb[i].physicalPage);
+	}
+	for(int i=0;i<pageTableSize;++i)
+	{
+		printf("pageTable entry %d: valid %d  vpn %d  ppn %d\n",i,pageTable[i].valid,pageTable[i].virtualPage,pageTable[i].physicalPage);
+	}
 	DEBUG('a', "*** frame %d > %d!\n", pageFrame, NumPhysPages);
+	printf("*** frame %d > %d!\n",pageFrame,NumPhysPages);
+	printf("entry valid:%d \n",entry->valid);
+	printf("entry vpn:%d \n",entry->virtualPage);
+	printf("We are wanting to do translate: vpn %d\n",vpn);
 	return BusErrorException;
     }
     entry->use = TRUE;		// set the use, dirty bits
