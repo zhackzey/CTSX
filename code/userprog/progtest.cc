@@ -13,7 +13,11 @@
 #include "console.h"
 #include "addrspace.h"
 #include "synch.h"
-
+void ForkThread(int which)
+{
+    printf("Second thread started!\n");
+    machine->Run();
+}
 //----------------------------------------------------------------------
 // StartProcess
 // 	Run a user program.  Open the executable, load it into
@@ -23,20 +27,32 @@
 void
 StartProcess(char *filename)
 {
-    OpenFile *executable = fileSystem->Open(filename);
-    AddrSpace *space;
-
+    OpenFile *executable1 = fileSystem->Open(filename);
+    OpenFile *executable2 = fileSystem->Open(filename);
+    AddrSpace *space1,*space2;
     if (executable == NULL) {
 	printf("Unable to open file %s\n", filename);
 	return;
     }
-    space = new AddrSpace(executable);    
-    currentThread->space = space;
+    space1 = new AddrSpace(executable1);    
+    printf("First thread's addrspace initialized\n");
+    Thread * thread = new Thread("second thread");
+    space2 = new AddrSpace(executable2);
+    printf("Second thread's addrspace initialized\n");
+    currentThread->space = space1;
 
-    delete executable;			// close file
-
-    space->InitRegisters();		// set the initial register values
-    space->RestoreState();		// load page table register
+    // set second thread's addrspace
+    space2->InitRegisters();
+    space2->RestoreState();
+    thread->space=space2;
+    thread->Fork(ForkThread,(void*)1);
+    // let second thread take cpu
+    currentThread->Yield();
+    delete executable2;			// close file
+    delete executable1;
+    space1->InitRegisters();		// set the initial register values
+    space1->RestoreState();		// load page table register
+    printf("First thread started!\n");
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;
 					// the address space exits

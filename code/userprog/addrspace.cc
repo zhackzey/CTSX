@@ -116,14 +116,40 @@ AddrSpace::AddrSpace(OpenFile *executable)
     if (noffH.code.size > 0) {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
 			noffH.code.virtualAddr, noffH.code.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
+        /*executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
 			noffH.code.size, noffH.code.inFileAddr);
+        */
+       // the code segment's offset in this file
+       int offset = noffH.code.inFileAddr;
+        for(int i=0;i<noffH.code.size;++i)
+        // copy in the code segment into memory one byte each time
+        {
+            // virtual page #
+            int vpn = (noffH.code.virtualAddr + i) / PageSize;
+            // vpo (virtual page offset) = ppo (physical page offset)
+            int vpo = (noffH.code.virtualAddr + i) % PageSize;
+            int physicalAddr = pageTable[vpn].physicalPage * PageSize + vpo;
+            executable->ReadAt(&(machine->mainMemory[physicalAddr]),1,offset++); 
+        }
     }
+
     if (noffH.initData.size > 0) {
         DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
 			noffH.initData.virtualAddr, noffH.initData.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
+        /*executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
 			noffH.initData.size, noffH.initData.inFileAddr);
+        */
+       int offset = noffH.initData.inFileAddr;
+       for(int i=0;i<noffH.initData.size;++i)
+       // copy in the data segment into memory one byte each time
+       {
+           // virtual page #
+           int vpn = (noffH.initData.virtualAddr + i) / PageSize;
+           // vpo (virtual page offset) = ppo (physical page offset)
+           int vpo = (noffH.initData.virtualAddr + i) % PageSize;
+           int physicalAddr = pageTable[vpn].physicalPage * PageSize + vpo;
+           executable->ReadAt(&(machine->mainMemory[physicalAddr]),1,offset++);
+       }
     }
 
 }
@@ -179,7 +205,13 @@ AddrSpace::InitRegisters()
 //----------------------------------------------------------------------
 
 void AddrSpace::SaveState() 
-{}
+{
+    // thread switch will make tlb invalid
+    for (int i=0;i<TLBSize;++i)
+    {
+        machine->tlb[i].valid = FALSE;
+    } 
+}
 
 //----------------------------------------------------------------------
 // AddrSpace::RestoreState
