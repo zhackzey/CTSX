@@ -240,10 +240,11 @@ void Machine::clear()
 {
     for(int i=0;i<pageTableSize;++i)
     {
-        int vpn = pageTable[i].physicalPage;
-        if(bitmap[vpn]==1)
+        int ppn = pageTable[i].physicalPage;
+        if(bitmap[ppn]==1)
         {
-            bitmap[vpn]=0;
+            printf("deallocate physical page:%d \n",ppn);
+            bitmap[ppn]=0;
         }
     }
 }

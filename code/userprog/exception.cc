@@ -48,6 +48,13 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
+void AdvancePC()
+{
+    machine->WriteRegister(PrevPCReg,machine->ReadRegister(PCReg));
+    machine->WriteRegister(PCReg,machine->ReadRegister(PCReg)+4);
+    machine->WriteRegister(NextPCReg,machine->ReadRegister(NextPCReg)+4);
+}
+
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -57,17 +64,21 @@ ExceptionHandler(ExceptionType which)
     {
 	DEBUG('a', "Shutdown, initiated by user program.\n");
    	printf("user program calls syscall halt\n");
+    printf("current thread : %s\n",currentThread->getName());
+
        interrupt->Halt();
     }
     else if((which==SyscallException)&&(type == SC_Exit))
     {
         printf("user program calls syscall Exit\n");
-        
+        printf("current thread : %s\n",currentThread->getName());
         // we should deallocate the physical pages allocated for this user program
         machine->clear();
+        
         machine->PrintBitmap();
-        int NextPC = machine->ReadRegister(NextPCReg);
-        machine->WriteRegister(PCReg,NextPC);
+        //update PC
+        AdvancePC();
+        currentThread->Finish();
     } 
     else if(which==PageFaultException)
     {

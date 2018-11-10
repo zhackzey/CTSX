@@ -89,16 +89,16 @@ AddrSpace::AddrSpace(OpenFile *executable)
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
 	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	pageTable[i].physicalPage = i;
+	//pageTable[i].physicalPage = i;
 	
     // use bitmap to allocate physicalPage
-    int vpn = machine->find();
+    int ppn = machine->find();
     // check there is available physical page for use
     //ASSERT(vpn!=-1);
-    pageTable[i].virtualPage = vpn;
-    
+    pageTable[i].physicalPage = ppn;
+    printf("allocate physical page: %d\n",ppn);
     //bitmap allocatation state output
-    machine->PrintBitmap();
+    //machine->PrintBitmap();
 
     pageTable[i].valid = TRUE;
 	pageTable[i].use = FALSE;
@@ -225,4 +225,13 @@ void AddrSpace::RestoreState()
 {
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+}
+
+void AddrSpace::PrintPageTable()
+{
+    printf("Addrspace pageTable:\n");
+    for(int i=0;i<numPages;++i)
+        printf("%d ",pageTable[i].physicalPage);
+    printf("\n");
+
 }
