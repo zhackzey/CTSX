@@ -34,13 +34,29 @@ StartProcess(char *filename)
 	return;
     }
     space = new AddrSpace(executable);    
-
     currentThread->space = space;
 
+    OpenFile *executable2 = fileSystem->Open(filename);
+    AddrSpace *space2;
+    if (executable2 == NULL) {
+	printf("Unable to open file %s\n", filename);
+	return;
+    }
+    space2 = new AddrSpace(executable2);
+
+    Thread * thread = new Thread("Second Thread");
+    thread->space = space2;
+
+    space2->InitRegisters();
+    space2->RestoreState();
+    thread->Fork(ForkThread,(void*)1);
+    currentThread->Yield();
     
     delete executable;			// close file
+    delete executable2;
     space->InitRegisters();		// set the initial register values
     space->RestoreState();		// load page table register
+    printf("First thread started\n");
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;
 					// the address space exits

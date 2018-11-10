@@ -70,8 +70,8 @@ ExceptionHandler(ExceptionType which)
     }
     else if((which==SyscallException)&&(type == SC_Exit))
     {
-        printf("user program calls syscall Exit\n");
         printf("current thread : %s\n",currentThread->getName());
+        printf("user program calls syscall Exit\n");
         // we should deallocate the physical pages allocated for this user program
         machine->clear();
         
