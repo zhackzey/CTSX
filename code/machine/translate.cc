@@ -211,47 +211,72 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     offset = (unsigned) virtAddr % PageSize;
     //printf("vpn : %d  offset : %d\n",vpn,offset);
 
-    if (tlb == NULL) {		// => page table => vpn is index into table
-	if (vpn >= pageTableSize) {
-	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
-			virtAddr, pageTableSize);
-	    return AddressErrorException;
-	} else if (!pageTable[vpn].valid) {
-	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
-			virtAddr, pageTableSize);
-	    return PageFaultException;
-	}
-	entry = &pageTable[vpn];
-    } else {	
-        for (entry = NULL, i = 0; i < TLBSize; i++)
-    	    if (tlb[i].valid && (tlb[i].virtualPage == vpn)) {
-		entry = &tlb[i];			// FOUND!
-		stats->tlb_hit++;
-		
-		// For LRU
-		
-		int split = machine->LRU_cnt [i];
-		// reset this latest visited entry's LRU cnt to 1
-		LRU_cnt[i] = 1;
-		for (int j=0;j<TLBSize;++j)
-		{
-			if(j==i)
-				continue;
-			if(LRU_cnt[j]==-1) // invalid
-				continue;
-			if(LRU_cnt[j]<split) // update the old LRU_cnt
-				LRU_cnt[j]++;
-
+    if (tlb == NULL) // use PageTable
+	{		
+	
+		// the following is for traditional pageTable
+		// => page table => vpn is index into table
+		/*
+		if (vpn >= pageTableSize) {
+			DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
+				virtAddr, pageTableSize);
+			return AddressErrorException;
+		} else if (!pageTable[vpn].valid) {
+			DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
+				virtAddr, pageTableSize);
+			return PageFaultException;
 		}
-		break;
-	    }
-	if (entry == NULL) {				// not found
-    	    DEBUG('a', "*** no valid TLB entry found for this virtual page!\n");
-			stats->tlb_miss++;
-    	    return PageFaultException;		// really, this is a TLB fault,
-						// the page may be in memory,
-						// but not in the TLB
-	}
+		entry = &pageTable[vpn];
+		*/
+
+		// the following is for inverted pageTable
+		// => page table => ppn is index into table
+		// so we iter through inverted pageTable to find if one entry's virtualPage = vpn we are looking for
+   		entry =NULL;
+		for (int i=0;i < NumPhysPages ; ++i )
+		{
+			if (pageTable[i].valid == TRUE&&pageTable[i].virtualPage == vpn &&pageTable[i].threadID == currentThread->getThreadID())
+			{
+				entry = &pageTable[i];  //FOUND!
+				break;
+			}
+		}
+		if (entry == NULL) // not Found
+			return PageFaultException;
+	} 
+	else 	// use TLB
+	{	
+        for (entry = NULL, i = 0; i < TLBSize; i++)
+    	    if (tlb[i].valid && (tlb[i].virtualPage == vpn)) 
+			{
+				entry = &tlb[i];			// FOUND!
+				stats->tlb_hit++;
+		
+				// For LRU
+				
+				int split = machine->LRU_cnt [i];
+				// reset this latest visited entry's LRU cnt to 1
+				LRU_cnt[i] = 1;
+				for (int j=0;j<TLBSize;++j)
+				{
+					if(j==i)
+						continue;
+					if(LRU_cnt[j]==-1) // invalid
+						continue;
+					if(LRU_cnt[j]<split) // update the old LRU_cnt
+						LRU_cnt[j]++;
+
+				}
+				break;
+	    	}
+		if (entry == NULL) 
+		{				// not found
+				DEBUG('a', "*** no valid TLB entry found for this virtual page!\n");
+				stats->tlb_miss++;
+				return PageFaultException;		// really, this is a TLB fault,
+							// the page may be in memory,
+							// but not in the TLB
+		}
     }
 
     if (entry->readOnly && writing) {	// trying to write to a read-only page
@@ -263,19 +288,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     // if the pageFrame is too big, there is something really wrong! 
     // An invalid translation was loaded into the page table or TLB. 
     if (pageFrame >= NumPhysPages) { 
-	for (int i=0;i<TLBSize;++i)
-	{
-		printf("tlb entry %d: valid %d  vpn %d  ppn %d\n",i,tlb[i].valid,tlb[i].virtualPage,tlb[i].physicalPage);
-	}
-	for(int i=0;i<pageTableSize;++i)
-	{
-		printf("pageTable entry %d: valid %d  vpn %d  ppn %d\n",i,pageTable[i].valid,pageTable[i].virtualPage,pageTable[i].physicalPage);
-	}
 	DEBUG('a', "*** frame %d > %d!\n", pageFrame, NumPhysPages);
-	printf("*** frame %d > %d!\n",pageFrame,NumPhysPages);
-	printf("entry valid:%d \n",entry->valid);
-	printf("entry vpn:%d \n",entry->virtualPage);
-	printf("We are wanting to do translate: vpn %d\n",vpn);
 	return BusErrorException;
     }
     entry->use = TRUE;		// set the use, dirty bits

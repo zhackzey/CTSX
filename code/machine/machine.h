@@ -188,6 +188,7 @@ class Machine {
 	int find();
 	void clear();
 	void PrintBitmap();
+	void PrintPageTable();
 private:
     bool singleStep;		// drop back into the debugger after each
 				// simulated instruction

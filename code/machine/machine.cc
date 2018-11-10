@@ -72,6 +72,24 @@ Machine::Machine(bool debug)
     //printf("No TLB!\n");
     tlb = NULL;
     pageTable = NULL;
+    // this is for inverted pageTable
+    // inverted pageTable's size is determined by actual memory size
+    // so we have NumPhysPages entries here
+    
+    pageTable = new TranslationEntry[NumPhysPages];
+    for (i=0; i < NumPhysPages; ++i)
+    {
+        pageTable[i].valid = FALSE;
+        pageTable[i].virtualPage = -1;
+        // ppn is the index into inverted pageTable
+        pageTable[i].physicalPage = i;
+        pageTable[i].use = FALSE;
+        pageTable[i].dirty = FALSE;
+        pageTable[i].readOnly = FALSE;
+        pageTable[i].threadID = -1;
+    }
+    // the size of inverted pageTable is determined by memory size
+    pageTableSize = NumPhysPages;
 #endif
 
     LRU_cnt = new int [TLBSize];
@@ -240,6 +258,8 @@ int Machine::find()
 
 void Machine::clear()
 {
+    // for traditional pageTable
+    /*       
     for(int i=0;i<pageTableSize;++i)
     {
         int ppn = pageTable[i].physicalPage;
@@ -248,7 +268,21 @@ void Machine::clear()
             printf("deallocate physical page:%d \n",ppn);
             bitmap[ppn]=0;
         }
-    }
+    }*/
+
+    //for inverted pageTable
+    for(int i=0;i<NumPhysPages;++i)
+    {
+        if(pageTable[i].threadID == currentThread->getThreadID())
+        {
+            if(bitmap[i]==1)
+            {
+                printf("deallocate physical page:%d \n",i);
+                pageTable[i].valid =FALSE; 
+                bitmap[i] = 0;
+            }
+        }
+    }    
 }
 void Machine::PrintBitmap()
 {
@@ -259,4 +293,13 @@ void Machine::PrintBitmap()
             printf("  %d,",i);
     }
     printf("\n");
+}
+
+void Machine::PrintPageTable()
+{
+    printf("PageTable: \n");
+    for(int i=0; i< pageTableSize;++i)
+    {
+        printf("pageTable entry %d : valid %d  vpn  %d  ppn  %d  threadID  %d\n",i,pageTable[i].valid,pageTable[i].virtualPage,pageTable[i].physicalPage,pageTable[i].threadID);
+    }
 }

@@ -87,7 +87,11 @@ AddrSpace::AddrSpace(OpenFile *executable)
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
 // first, set up the translation 
-    pageTable = new TranslationEntry[numPages];
+    // this is for traditional pageTable
+    // Since we initialize inverted pageTable in Machine, we don't need 
+    // pageTable here
+    /*pageTable = new TranslationEntry[numPages];
+    
     for (i = 0; i < numPages; i++) {
 
     // for lazy-loading
@@ -116,6 +120,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
 					// a separate page, we could set its 
 					// pages to be read-only
     }
+    */
+
     
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
@@ -248,8 +254,11 @@ AddrSpace::InitRegisters()
 
 void AddrSpace::SaveState() 
 {
+    if (machine->tlb==NULL)
+        return;
     printf("Now Making tlb ineffect\n");
     // thread switch will make tlb invalid
+
     for (int i=0;i<TLBSize;++i)
     {
         machine->tlb[i].valid = FALSE;
@@ -266,8 +275,9 @@ void AddrSpace::SaveState()
 
 void AddrSpace::RestoreState() 
 {
-    machine->pageTable = pageTable;
-    machine->pageTableSize = numPages;
+    //machine->pageTable = pageTable;
+    //machine->pageTableSize = numPages;
+    //machine->pageTableSize = NumPhysPages;
 }
 
 void AddrSpace::PrintPageTable()

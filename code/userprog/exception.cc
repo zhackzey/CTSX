@@ -73,8 +73,13 @@ ExceptionHandler(ExceptionType which)
         printf("current thread : %s\n",currentThread->getName());
         printf("user program calls syscall Exit\n");
         // we should deallocate the physical pages allocated for this user program
-        machine->clear();
+        printf("Before deallocate...\n");
+        machine->PrintPageTable();
         
+        machine->clear();
+        printf("After deallocate...\n");
+        machine->PrintPageTable();
+
         machine->PrintBitmap();
         //update PC
         AdvancePC();
@@ -181,8 +186,10 @@ ExceptionHandler(ExceptionType which)
                 }
             }
 
+            // this is for traditional pageTable
             // now we have chosen the physical page to replace
             // we should copy the disk physical page into memory
+            /*
             openfile->ReadAt(&(machine->mainMemory[pos*PageSize]),PageSize,vpn* PageSize);
             machine->pageTable[vpn].valid = TRUE;
             printf("Copy virtual page %d into memory, corresponding ppn is %d \n",vpn,pos);
@@ -193,7 +200,18 @@ ExceptionHandler(ExceptionType which)
             machine->pageTable[vpn].use =FALSE;
             machine->pageTable[vpn].dirty = FALSE;
             machine->pageTable[vpn].readOnly = FALSE;
+            */
 
+           // this is for inverted pageTable
+            openfile->ReadAt(&(machine->mainMemory[pos*PageSize]),PageSize,vpn* PageSize);
+            // ppn is index into inverted PageTable !
+            machine->pageTable[pos].valid = TRUE;
+            printf("Copy virtual page %d into memory, corresponding ppn is %d \n",vpn,pos);
+            machine->pageTable[pos].virtualPage = vpn;
+            machine->pageTable[pos].use = FALSE;
+            machine->pageTable[pos].dirty = FALSE;
+            machine->pageTable[pos].readOnly = FALSE;
+            machine->pageTable[pos].threadID = currentThread->getThreadID();
             delete openfile;
             //ASSERT(FALSE);
         }
