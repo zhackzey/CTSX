@@ -180,23 +180,6 @@ FileSystem::Create(char *name, int initialSize)
     int sector;
     bool success;
 
-    // get the file type from the filename
-    int pos = -1; // the postion of dot '.'
-    for (int i = 0; i < strlen(name); ++i)
-    {
-        if (name[i] == '.')
-        {
-            pos = i;
-            break;
-        }
-    } 
-    int j = 0;
-    for ( int i = pos + 1; i < strlen(name); ++i)
-    {
-        hdr->type[j++] = name[i];
-    }
-    hdr->type[j] =  '\0';
-
     DEBUG('f', "Creating file %s, size %d\n", name, initialSize);
 
     directory = new Directory(NumDirEntries);
@@ -222,6 +205,23 @@ FileSystem::Create(char *name, int initialSize)
 	            else 
                 {	
 	    	        success = TRUE;
+                    // get the file type from the filename
+                    int pos = -1; // the postion of dot '.'
+                    for (int i = 0; i < strlen(name); ++i)
+                    {
+                        if (name[i] == '.')
+                        {
+                            pos = i;
+                            break;
+                        }
+                    } 
+                    int j = 0;
+                    for ( int i = pos + 1; i < strlen(name); ++i)
+                    {
+                        hdr->type[j++] = name[i];
+                    }
+                    hdr->type[j] =  '\0';
+
                     printf("Create File  **%s** Success! Now Set time...\n", name);
                     printf("File type resolved : %s\n", hdr->type);
                     // set time
