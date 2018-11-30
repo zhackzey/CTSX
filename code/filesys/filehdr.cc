@@ -132,8 +132,13 @@ FileHeader::Print()
     int i, j, k;
     char *data = new char[SectorSize];
 
-    printf("FileHeader contents.  File size: %d.  File blocks:\n", numBytes);
+    printf("FileHeader contents.  File size: %d. \n", numBytes);
     printf("File type: %s\n", type);
+    printf("File Header Position: %d\n", sector);
+    printf("Create time: %s\n", create_time);
+    printf("Last visit time: %s\n",last_visit_time);
+    printf("Last Modify time: %s\n", last_modify_time);
+    printf("File blocks:\n");
     for (i = 0; i < numSectors; i++)
 	printf("%d ", dataSectors[i]);
     printf("\nFile contents:\n");
@@ -156,5 +161,27 @@ FileHeader::SetCreateTime()
 {
     time_t t;
     time(&t);
-    strncpy()
+    strncpy(create_time,asctime(gmtime(&t)),25);
+    create_time[24] = '\0';
+    //printf("Create file at time %s\n", create_time);
+}
+
+void
+FileHeader::SetLastVisitTime()
+{
+    time_t t;
+    time(&t);
+    strncpy(last_visit_time,asctime(gmtime(&t)),25);
+    last_visit_time[24] = '\0';
+    //printf("Visit file at time %s\n", last_visit_time);
+}
+
+void 
+FileHeader::SetLastModifyTime()
+{
+    time_t t;
+    time(&t);
+    strncpy(last_modify_time,asctime(gmtime(&t)),25);
+    last_modify_time[24] = '\0';
+    //printf("Modify file at time %s\n", last_modify_time);
 }

@@ -86,8 +86,9 @@ main(int argc, char **argv)
 
     DEBUG('t', "Entering main");
     (void) Initialize(argc, argv);
-    
+ /*   
 #ifdef THREADS
+	printf("here\n");
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
       argCount = 1;
       switch (argv[0][1]) {
@@ -110,7 +111,7 @@ main(int argc, char **argv)
 
     ThreadTest();
 #endif
-
+*/
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
 	argCount = 1;
         if (!strcmp(*argv, "-z"))               // print copyright

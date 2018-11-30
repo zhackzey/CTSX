@@ -190,7 +190,7 @@ FileSystem::Create(char *name, int initialSize)
             break;
         }
     } 
-    
+    int j = 0;
     for ( int i = pos + 1; i < strlen(name); ++i)
     {
         hdr->type[j++] = name[i];
@@ -203,28 +203,41 @@ FileSystem::Create(char *name, int initialSize)
     directory->FetchFrom(directoryFile);
 
     if (directory->Find(name) != -1)
-      success = FALSE;			// file is already in directory
-    else {	
+        success = FALSE;			// file is already in directory
+    else 
+    {	
         freeMap = new BitMap(NumSectors);
         freeMap->FetchFrom(freeMapFile);
         sector = freeMap->Find();	// find a sector to hold the file header
     	if (sector == -1) 		
             success = FALSE;		// no free block for file header 
-        else if (!directory->Add(name, sector))
-            success = FALSE;	// no space in directory
-	else {
-    	    hdr = new FileHeader;
-	    if (!hdr->Allocate(freeMap, initialSize))
-            	success = FALSE;	// no space on disk for data
-	    else {	
-	    	success = TRUE;
-		// everthing worked, flush all changes back to disk
-    	    	hdr->WriteBack(sector); 		
-    	    	directory->WriteBack(directoryFile);
-    	    	freeMap->WriteBack(freeMapFile);
-	    }
+        else 
+            if (!directory->Add(name, sector))
+                success = FALSE;	// no space in directory
+	        else 
+            {
+    	        hdr = new FileHeader;
+	            if (!hdr->Allocate(freeMap, initialSize))
+            	    success = FALSE;	// no space on disk for data
+	            else 
+                {	
+	    	        success = TRUE;
+                    printf("Create File  **%s** Success! Now Set time...\n", name);
+                    printf("File type resolved : %s\n", hdr->type);
+                    // set time
+                    hdr->SetCreateTime();
+                    hdr->SetLastVisitTime();
+                    hdr->SetLastModifyTime();
+                    //printf("File create time: %s\n", hdr->create_time);
+                    hdr->sector = sector;
+
+		            // everthing worked, flush all changes back to disk
+    	    	    hdr->WriteBack(sector); 		
+    	    	    directory->WriteBack(directoryFile);
+    	    	    freeMap->WriteBack(freeMapFile);
+	            }
             delete hdr;
-	}
+	        }
         delete freeMap;
     }
     delete directory;
