@@ -180,6 +180,23 @@ FileSystem::Create(char *name, int initialSize)
     int sector;
     bool success;
 
+    // get the file type from the filename
+    int pos = -1; // the postion of dot '.'
+    for (int i = 0; i < strlen(name); ++i)
+    {
+        if (name[i] == '.')
+        {
+            pos = i;
+            break;
+        }
+    } 
+    
+    for ( int i = pos + 1; i < strlen(name); ++i)
+    {
+        hdr->type[j++] = name[i];
+    }
+    hdr->type[j] =  '\0';
+
     DEBUG('f', "Creating file %s, size %d\n", name, initialSize);
 
     directory = new Directory(NumDirEntries);

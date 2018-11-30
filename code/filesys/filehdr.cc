@@ -133,6 +133,7 @@ FileHeader::Print()
     char *data = new char[SectorSize];
 
     printf("FileHeader contents.  File size: %d.  File blocks:\n", numBytes);
+    printf("File type: %s\n", type);
     for (i = 0; i < numSectors; i++)
 	printf("%d ", dataSectors[i]);
     printf("\nFile contents:\n");
@@ -147,4 +148,13 @@ FileHeader::Print()
         printf("\n"); 
     }
     delete [] data;
+}
+
+
+void
+FileHeader::SetCreateTime()
+{
+    time_t t;
+    time(&t);
+    strncpy()
 }
