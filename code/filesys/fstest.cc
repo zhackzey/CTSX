@@ -198,7 +198,8 @@ PerformanceTest()
     FileRead();
 }
 */
-// test 2void
+// test 2
+void
 PerformanceTest()
 {
     printf("Starting file system performance test:\n");
