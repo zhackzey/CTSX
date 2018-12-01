@@ -139,16 +139,7 @@ FileHeader::WriteBack(int sector)
 int
 FileHeader::ByteToSector(int offset)
 {
-    if(offset < 3712)
-        return(dataSectors[offset / SectorSize]);
-    else
-    {
-        int sector_postion = (offset - 3712) / 128;
-        char * indirect_index = new char[SectorSize];
-        synchDisk->ReadSector(dataSectors[29], indirect_index);
-        return int(indirect_index[sector_postion * 4]);
-    }
-
+    return(dataSectors[offset / SectorSize]);
 }
 
 //----------------------------------------------------------------------
@@ -194,96 +185,3 @@ FileHeader::Print()
         for (i = 0; i< 29; i++)
             printf("%d ",dataSectors[i]);
         char * indirect_index = new char[SectorSize];
-        synchDisk->ReadSector(dataSectors[29], indirect_index);
-        j = 0;
-        for (i = 0; i < numSectors - 29; ++i)
-        {
-            printf("%d ", int(indirect_index[j]));
-            j += 4;
-        }
-    }
-
-
-    printf("\nFile contents:\n");
-    if( numSectors <= 29)
-    {
-        for (i = k = 0; i < numSectors; i++) 
-        {
-	        synchDisk->ReadSector(dataSectors[i], data);
-            for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) 
-            {
-	            if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
-		            printf("%c", data[j]);
-                else
-		            printf("\\%x", (unsigned char)data[j]);
-	        }
-            printf("\n"); 
-        }
-    }
-    else
-    {
-        for (i = k =0; i< 29; ++i)
-        {
-            printf("Sector : %d\n", dataSectors[i]);
-            synchDisk->ReadSector(dataSectors[i],data);
-            for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++)
-            {
-                if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
-		            printf("%c", data[j]);
-                else
-		            printf("\\%x", (unsigned char)data[j]);
-            }
-            printf("\n");
-        }
-
-        char * indirect_index = new char[SectorSize];
-        synchDisk->ReadSector(dataSectors[29], indirect_index);
-        for (i = 0; i < numSectors - 29; ++i)
-        {
-            printf("Sector : %d\n",int(indirect_index[i * 4]));
-            synchDisk->ReadSector(int(indirect_index[i * 4]), data);
-            for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++)
-            {
-                if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
-		            printf("%c", data[j]);
-                else
-		            printf("\\%x", (unsigned char)data[j]);
-            }
-            printf("\n");
-        }
-    }
-
-    delete [] data;
-}
-
-/*
-void
-FileHeader::SetCreateTime()
-{
-    time_t t;
-    time(&t);
-    strncpy(create_time,asctime(gmtime(&t)),25);
-    create_time[24] = '\0';
-    //printf("Create file at time %s\n", create_time);
-}
-
-void
-FileHeader::SetLastVisitTime()
-{
-    time_t t;
-    time(&t);
-    strncpy(last_visit_time,asctime(gmtime(&t)),25);
-    last_visit_time[24] = '\0';
-    //printf("Visit file at time %s\n", last_visit_time);
-}
-
-void 
-FileHeader::SetLastModifyTime()
-{
-    time_t t;
-    time(&t);
-    strncpy(last_modify_time,asctime(gmtime(&t)),25);
-    last_modify_time[24] = '\0';
-    //printf("Modify file at time %s\n", last_modify_time);
-}
-*/

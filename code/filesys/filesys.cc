@@ -205,6 +205,7 @@ FileSystem::Create(char *name, int initialSize)
 	            else 
                 {	
 	    	        success = TRUE;
+                    /*
                     // get the file type from the filename
                     int pos = -1; // the postion of dot '.'
                     for (int i = 0; i < strlen(name); ++i)
@@ -230,7 +231,7 @@ FileSystem::Create(char *name, int initialSize)
                     hdr->SetLastModifyTime();
                     //printf("File create time: %s\n", hdr->create_time);
                     hdr->sector = sector;
-
+                    */
 		            // everthing worked, flush all changes back to disk
     	    	    hdr->WriteBack(sector); 		
     	    	    directory->WriteBack(directoryFile);
