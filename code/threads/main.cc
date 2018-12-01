@@ -153,7 +153,10 @@ main(int argc, char **argv)
             fileSystem->Print();
 	} else if (!strcmp(*argv, "-t")) {	// performance test
             PerformanceTest();
+	} else if (!strcmp(*argv, "-cd")){
+			fileSystem->Create(*(argv + 1), -1);
 	}
+
 #endif // FILESYS
 #ifdef NETWORK
         if (!strcmp(*argv, "-o")) {

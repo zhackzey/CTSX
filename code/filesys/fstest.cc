@@ -166,7 +166,7 @@ FileRead()
 	}
     }
     delete [] buffer;
-    delete openFile;	// close file
+    delete openFile;	// close filevoid CreateDir(char*name)
 }
 
 void
@@ -182,4 +182,3 @@ PerformanceTest()
     }
     stats->Print();
 }
-
