@@ -23,13 +23,13 @@
 
 // used for Exercise 3
 // (128 - 2 * 4) / 4
-#define NumDirect 	30
+#define NumDirect 	((SectorSize -3 * sizeof (int)) / sizeof (int))
 // 128 / 4
 #define SectorInt   32
 // provide 1 indirect index
 // 29 * 128 + 1 * 32 * 128
-#define MaxFileSize 	7808
-
+#define MaxFileSize 	((NumDirect - 1) * SectorSize) + SectorSize * (SectorSize / sizeof(int))
+#define IndirectSector SectorSize / sizeof(int)
 // The following class defines the Nachos "file header" (in UNIX terms,  
 // the "i-node"), describing where on disk to find all of the data in the file.
 // The file header is organized as a simple table of pointers to
@@ -47,6 +47,7 @@
 
 class FileHeader {
   public:
+    int sector_postion; 
     bool Allocate(BitMap *bitMap, int fileSize);// Initialize a file header, 
 						//  including allocating space 
 						//  on disk for the file data
@@ -72,6 +73,7 @@ class FileHeader {
     void SetLastVisitTime();
     void SetLastModifyTime();
     */
+    bool Extend(BitMap * freeMap, int bytes); 
   private:
     int numBytes;			// Number of bytes in the file
     int numSectors;			// Number of data sectors in the file

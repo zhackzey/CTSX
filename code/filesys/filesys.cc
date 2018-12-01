@@ -50,7 +50,7 @@
 #include "directory.h"
 #include "filehdr.h"
 #include "filesys.h"
-
+#include "system.h"
 // Sectors containing the file headers for the bitmap of free sectors,
 // and the directory of files.  These file headers are placed in well-known 
 // sectors, so that they can be located on boot-up.
@@ -216,7 +216,10 @@ FileSystem::Create(char *name, int initialSize)
     //directory->Print();
 
     if (directory->Find(name) != -1)
-        success = FALSE;			// file is already in directory
+        {
+            success = FALSE;			// file is already in directory
+            printf("file is already in directory\n");
+        }
     else 
     {	
         freeMap = new BitMap(NumSectors);
@@ -414,7 +417,13 @@ FileSystem::Remove(char *name)
        delete directory;
        return FALSE;			 // file not found 
     }
-
+    printf("Find this file! in sector %d\n",sector);
+    printf("numVisitors: %d\n",synchDisk->numVisitors[sector]);
+    if (synchDisk->numVisitors[sector])
+    {
+        printf("Unable to delete this file, there are still visitors\n");
+        return FALSE;
+    }
     if (directory->GetType(file_name) == 0)
     {
         Directory* current_directory = new Directory(NumDirEntries);

@@ -27,6 +27,12 @@
 // returning.
 class SynchDisk {
   public:
+    
+    Semaphore * mutex[NumSectors];
+    int numReaders[NumSectors];
+    int numVisitors[NumSectors];
+    Lock * readerLock;
+
     SynchDisk(char* name);    		// Initialize a synchronous disk,
 					// by initializing the raw Disk.
     ~SynchDisk();			// De-allocate the synch disk data
@@ -43,6 +49,10 @@ class SynchDisk {
 					// handler, to signal that the
 					// current disk operation is complete.
 
+    void PlusReader(int sector);
+    void MinusReader(int sector);
+    void BeginWrite(int sector);
+    void EndWrite(int sector);
   private:
     Disk *disk;		  		// Raw disk device
     Semaphore *semaphore; 		// To synchronize requesting thread 

@@ -32,7 +32,9 @@ OpenFile::OpenFile(int sector)
     hdr = new FileHeader;
     hdr->FetchFrom(sector);
     //hdr->sector = sector;
+    hdr->sector_postion = sector;
     seekPosition = 0;
+    synchDisk->numVisitors[hdr->sector_postion] ++;
 }
 
 //----------------------------------------------------------------------
@@ -42,6 +44,7 @@ OpenFile::OpenFile(int sector)
 
 OpenFile::~OpenFile()
 {
+    synchDisk->numVisitors[hdr->sector_postion] --;
     delete hdr;
 }
 
@@ -75,16 +78,26 @@ OpenFile::Seek(int position)
 int
 OpenFile::Read(char *into, int numBytes)
 {
+   synchDisk->PlusReader(hdr->sector_postion);
    int result = ReadAt(into, numBytes, seekPosition);
    seekPosition += result;
+   printf("%s seek position %d\n",currentThread->getName(),seekPosition);
+   printf("%s Yield!\n",currentThread->getName());
+   currentThread->Yield();
+
+   synchDisk->MinusReader(hdr->sector_postion);
    return result;
 }
 
 int
 OpenFile::Write(char *into, int numBytes)
 {
+   synchDisk->BeginWrite(hdr->sector_postion);
    int result = WriteAt(into, numBytes, seekPosition);
+   
    seekPosition += result;
+   printf("%s seek position %d\n",currentThread->getName(), seekPosition);
+   synchDisk->EndWrite(hdr->sector_postion);
    return result;
 }
 
@@ -156,12 +169,20 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
     bool firstAligned, lastAligned;
     char *buf;
 
-    if ((numBytes <= 0) || (position >= fileLength))
-	return 0;				// check request
+    if ((numBytes <= 0))
+	    return 0;				// check request
     if ((position + numBytes) > fileLength)
-	numBytes = fileLength - position;
-    DEBUG('f', "Writing %d bytes at %d, from file of length %d.\n", 	
-			numBytes, position, fileLength);
+	{
+        OpenFile * freeMapFile = new OpenFile(0);
+        BitMap * freeMap = new BitMap(NumSectors);
+        freeMap->FetchFrom(freeMapFile);
+        hdr->Extend(freeMap, position + numBytes -fileLength);
+        hdr->WriteBack(hdr->sector_postion);
+        freeMap->WriteBack(freeMapFile);
+        delete freeMap;
+    }
+    //DEBUG('f', "Writing %d bytes at %d, from file of length %d.\n", 	
+	//		numBytes, position, fileLength);
 
     firstSector = divRoundDown(position, SectorSize);
     lastSector = divRoundDown(position + numBytes - 1, SectorSize);

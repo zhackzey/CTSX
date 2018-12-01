@@ -111,7 +111,7 @@ Print(char *name)
 #define FileName 	"TestFile"
 #define Contents 	"1234567890"
 #define ContentSize 	strlen(Contents)
-#define FileSize 	((int)(ContentSize * 5000))
+#define FileSize 	((int)(ContentSize * 3))
 
 static void 
 FileWrite()
@@ -130,13 +130,18 @@ FileWrite()
 	printf("Perf test: unable to open %s\n", FileName);
 	return;
     }
-    for (i = 0; i < FileSize; i += ContentSize) {
+    for (i = 0; i < FileSize; i += ContentSize) 
+    {
+        printf("%s begin write %d times\n", currentThread->getName(),i /ContentSize);
         numBytes = openFile->Write(Contents, ContentSize);
-	if (numBytes < 10) {
-	    printf("Perf test: unable to write %s\n", FileName);
-	    delete openFile;
-	    return;
-	}
+        printf("%s end write %d times\n", currentThread->getName(),i /ContentSize);
+
+        if (numBytes < 10) 
+        {
+	        printf("Perf test: unable to write %s\n", FileName);
+	        delete openFile;
+	        return;
+	    }
     }
     delete openFile;	// close file
 }
@@ -156,29 +161,52 @@ FileRead()
 	delete [] buffer;
 	return;
     }
-    for (i = 0; i < FileSize; i += ContentSize) {
+    for (i = 0; i < FileSize; i += ContentSize) 
+    {
+        printf("%s begin read %d times\n", currentThread->getName(),i /ContentSize);
         numBytes = openFile->Read(buffer, ContentSize);
-	if ((numBytes < 10) || strncmp(buffer, Contents, ContentSize)) {
-	    printf("Perf test: unable to read %s\n", FileName);
-	    delete openFile;
-	    delete [] buffer;
-	    return;
-	}
+        //printf("%s read content %s\n",currentThread->getName(),buffer);
+        printf("%s end read %d times\n", currentThread->getName(),i /ContentSize);
+        if ((numBytes < 10) || strncmp(buffer, Contents, ContentSize)) 
+        {
+            printf("Perf test: unable to read %s\n", FileName);
+            delete openFile;
+            delete [] buffer;
+            return;
+	    }
     }
     delete [] buffer;
     delete openFile;	// close filevoid CreateDir(char*name)
 }
 
+void RD()
+{
+    printf("%s begin to read\n",currentThread->getName());
+    FileRead();
+}
+// test 1
+/*
 void
 PerformanceTest()
 {
     printf("Starting file system performance test:\n");
-    stats->Print();
+    //stats->Print();
     FileWrite();
+    Thread * thread1 = new Thread("reader1");
+    thread1->Fork(RD,(void*)1);
+    printf("%s begin to read\n",currentThread->getName());
     FileRead();
-    if (!fileSystem->Remove(FileName)) {
-      printf("Perf test: unable to remove %s\n", FileName);
-      return;
-    }
-    stats->Print();
+}
+*/
+// test 2void
+PerformanceTest()
+{
+    printf("Starting file system performance test:\n");
+    //stats->Print();
+    FileWrite();
+    Thread * thread1 = new Thread("reader1");
+    thread1->Fork(RD,(void*)1);
+    currentThread->Yield();
+    printf("%s tries to delete\n",currentThread->getName());
+    fileSystem->Remove(FileName);
 }

@@ -41,27 +41,28 @@
 bool
 FileHeader::Allocate(BitMap *freeMap, int fileSize)
 { 
+    
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);
     if (freeMap->NumClear() < numSectors)
-	return FALSE;		// not enough space
+	    return FALSE;		// not enough space
 
-    if (numSectors <= 29)
+    if (numSectors < NumDirect)
     {
         for (int i = 0; i < numSectors; i++)
 	        dataSectors[i] = freeMap->Find();
     }
     else
     {
-        for (int i = 0; i < 29; ++i)
+        for (int i = 0; i < (NumDirect - 1); ++i)
             dataSectors[i] = freeMap->Find();
-        dataSectors[29] = freeMap->Find();
+        dataSectors[NumDirect - 1] = freeMap->Find();
         int indirect_index[32];
-        for (int i = 0; i < numSectors - 29; i++)
+        for (int i = 0; i < numSectors - (NumDirect - 1); i++)
         {
             indirect_index[i] = freeMap->Find();
         }
-        synchDisk->WriteSector(dataSectors[29], (char*) indirect_index);
+        synchDisk->WriteSector(dataSectors[NumDirect - 1 ], (char*) indirect_index);
     }
     return TRUE;
 }
@@ -76,7 +77,7 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
 void 
 FileHeader::Deallocate(BitMap *freeMap)
 {
-    if (numSectors <= 29)
+    if (numSectors < NumDirect)
     {
         for (int i = 0; i < numSectors; i++) 
         {
@@ -87,17 +88,18 @@ FileHeader::Deallocate(BitMap *freeMap)
     else
     {
         char* indirect_index = new char[SectorSize];
-        synchDisk->ReadSector(dataSectors[29], indirect_index);
-        for (int i = 0; i< numSectors - 29; ++i)
+        synchDisk->ReadSector(dataSectors[NumDirect - 1], indirect_index);
+        for (int i = 0; i< numSectors - (NumDirect - 1); ++i)
         {
             freeMap->Clear((int) indirect_index[i * 4]);
         }
-        for (int i = 0; i < 30; ++i)
+        for (int i = 0; i < NumDirect; ++i)
         {
             freeMap->Clear((int)dataSectors[i]);
         }
 
     }
+    
 }
 
 //----------------------------------------------------------------------
@@ -139,13 +141,13 @@ FileHeader::WriteBack(int sector)
 int
 FileHeader::ByteToSector(int offset)
 {
-    if(offset < 3712)
+    if(offset < (NumDirect - 1 ) *SectorSize)
         return(dataSectors[offset / SectorSize]);
     else
     {
-        int sector_postion = (offset - 3712) / 128;
+        int sector_postion = (offset - (NumDirect - 1 ) *SectorSize) / SectorSize;
         char * indirect_index = new char[SectorSize];
-        synchDisk->ReadSector(dataSectors[29], indirect_index);
+        synchDisk->ReadSector(dataSectors[NumDirect - 1], indirect_index);
         return int(indirect_index[sector_postion * 4]);
     }
 
@@ -183,20 +185,20 @@ FileHeader::Print()
     printf("Last Modify time: %s\n", last_modify_time);
     */
     printf("File blocks:\n");
-    if (numSectors <= 29)
+    if (numSectors <= (NumDirect - 1))
     {
         for (i = 0; i < numSectors; i++)
 	        printf("%d ", dataSectors[i]);
     }
     else
     {
-        printf("indirect_index : %d\n", dataSectors[29]);
-        for (i = 0; i< 29; i++)
+        printf("indirect_index : %d\n", dataSectors[(NumDirect - 1)]);
+        for (i = 0; i< (NumDirect - 1); i++)
             printf("%d ",dataSectors[i]);
         char * indirect_index = new char[SectorSize];
-        synchDisk->ReadSector(dataSectors[29], indirect_index);
+        synchDisk->ReadSector(dataSectors[(NumDirect - 1)], indirect_index);
         j = 0;
-        for (i = 0; i < numSectors - 29; ++i)
+        for (i = 0; i < numSectors - (NumDirect - 1); ++i)
         {
             printf("%d ", int(indirect_index[j]));
             j += 4;
@@ -205,7 +207,7 @@ FileHeader::Print()
 
 
     printf("\nFile contents:\n");
-    if( numSectors <= 29)
+    if( numSectors <= (NumDirect - 1))
     {
         for (i = k = 0; i < numSectors; i++) 
         {
@@ -222,7 +224,7 @@ FileHeader::Print()
     }
     else
     {
-        for (i = k =0; i< 29; ++i)
+        for (i = k =0; i< (NumDirect - 1); ++i)
         {
             printf("Sector : %d\n", dataSectors[i]);
             synchDisk->ReadSector(dataSectors[i],data);
@@ -237,8 +239,8 @@ FileHeader::Print()
         }
 
         char * indirect_index = new char[SectorSize];
-        synchDisk->ReadSector(dataSectors[29], indirect_index);
-        for (i = 0; i < numSectors - 29; ++i)
+        synchDisk->ReadSector(dataSectors[(NumDirect - 1)], indirect_index);
+        for (i = 0; i < numSectors - (NumDirect - 1); ++i)
         {
             printf("Sector : %d\n",int(indirect_index[i * 4]));
             synchDisk->ReadSector(int(indirect_index[i * 4]), data);
@@ -287,3 +289,23 @@ FileHeader::SetLastModifyTime()
     //printf("Modify file at time %s\n", last_modify_time);
 }
 */
+bool FileHeader::Extend(BitMap *freeMap, int bytes){
+    numBytes += bytes; 
+    int old_numSectors = numSectors;
+    numSectors = divRoundUp(numBytes, SectorSize);
+    if(old_numSectors == numSectors)
+        return true;
+    if (freeMap->NumClear() < numSectors - old_numSectors)
+        return false;
+    if(numSectors >= NumDirect){
+        printf("not support!\n");
+        return false;
+    }
+    printf("extends %d sectors\n", numSectors - old_numSectors);
+    
+    for(int i = old_numSectors; i < numSectors; i++){
+        dataSectors[i] = freeMap->Find();
+        printf("extend sector index: %d\n",dataSectors[i]);
+    }
+    return true;
+}
