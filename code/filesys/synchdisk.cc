@@ -17,6 +17,11 @@
 #include "copyright.h"
 #include "synchdisk.h"
 
+static Semaphore *readAvail = new Semaphore("read avail",0);
+static Semaphore * writeDone = new Semaphore("write done",0);
+static void ReadAvail(int arg) { readAvail->V();}
+static void WriteDone(int arg) { writeDone->V();}
+
 //----------------------------------------------------------------------
 // DiskRequestDone
 // 	Disk interrupt handler.  Need this to be a C routine, because 
@@ -106,4 +111,33 @@ void
 SynchDisk::RequestDone()
 { 
     semaphore->V();
+}
+
+SynchConsole::SynchConsole(char * readFile, char * writeFile)
+{
+    lock = new Lock("Console");
+    console = new Console(readFile, writeFile, ReadAvail, WriteDone, 0);
+}
+
+SynchConsole::~SynchConsole()
+{
+    delete lock;
+    delete console;
+}
+
+void SynchConsole::PutChar(char ch)
+{
+    lock->Acquire();
+    console->PutChar(ch);
+    writeDone->P();
+    lock->Release();
+}
+
+char SynchConsole::GetChar()
+{
+    lock->Acquire();
+    readAvail->P();
+    char ch= console->GetChar();
+    lock->Release();
+    return ch;
 }

@@ -12,6 +12,7 @@
 #define SYNCHDISK_H
 
 #include "disk.h"
+#include "console.h"
 #include "synch.h"
 
 // The following class defines a "synchronous" disk abstraction.
@@ -50,4 +51,17 @@ class SynchDisk {
 					// can be sent to the disk at a time
 };
 
+
+class SynchConsole {
+    public:
+        SynchConsole(char * readFile, char * writeFile);
+        ~SynchConsole();
+
+        void PutChar(char ch);
+        char GetChar();
+    private:
+        Console *console;
+        Lock * lock;
+
+};
 #endif // SYNCHDISK_H
