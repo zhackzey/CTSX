@@ -54,7 +54,47 @@ void AdvancePC()
     machine->WriteRegister(PCReg,machine->ReadRegister(NextPCReg));
     machine->WriteRegister(NextPCReg,machine->ReadRegister(NextPCReg)+4);
 }
-
+void exec_func(int address)
+{
+    char name[20];
+    int pos = 0;
+    int data;
+    while(1)
+    {
+        machine->ReadMem(address + pos, 1, &data);
+        if (data == 0)
+        {
+            name[pos] ='\0';
+            break;
+        }
+        name[pos++] = char(data);
+    }
+    OpenFile * executable = fileSystem ->Open(name);
+    AddrSpace * space;
+    space = new AddrSpace (executable);
+    currentThread->space = space;
+    delete executable;
+    space->InitRegisters();
+    space->RestoreState();
+    machine->Run();
+}
+struct Info
+{
+    AddrSpace * space;
+    int pc;
+};
+void fork_func(int address)
+{
+    Info * info = (Info*) address;
+    AddrSpace *space = info->space;
+    currentThread->space = space;
+    int cur_pc = info->pc;
+    space->InitRegisters();
+    space->RestoreState();
+    machine->WriteRegister(PCReg, cur_pc);
+    machine->WriteRegister(NextPCReg, cur_pc + 4);
+    machine->Run();
+}
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -148,6 +188,30 @@ ExceptionHandler(ExceptionType which)
         openfile->Write(content, cnt);
         AdvancePC();
     }
+    else if ((which == SyscallException) && (type == SC_Exec))
+    {
+        printf("user program calls syscall Exec\n");
+        int address = machine->ReadRegister(4);
+        Thread* newthread = new Thread("New Thread");
+        newthread->Fork(exec_func,address);
+        machine->WriteRegister(2,newthread->getThreadID());
+        AdvancePC();
+    }
+    else if((which == SyscallException) && (type == SC_Fork))
+    {
+        printf("user program calls syscall Fork\n");
+        int function_pc = machine->ReadRegister(4);
+        OpenFile * executable = fileSystem->Open(currentThread->filename);
+        AddrSpace * space = new AddrSpace(executable);
+        space->CopyAddrSpace(currentThread->space);
+        Info * info = new Info;
+        info->space = space;
+        info->pc = function_pc;
+        Thread * newthread = new Thread("New Thread");
+        newthread ->Fork (fork_func,int(info));
+        AdvancePC();
+    }
+
     else if((which==SyscallException)&&(type == SC_Exit))
     {
         printf("current thread : %s\n",currentThread->getName());
@@ -156,7 +220,7 @@ ExceptionHandler(ExceptionType which)
         //printf("Before deallocate...\n");
         //machine->PrintPageTable();
         
-        //machine->clear();
+        machine->clear();
         //printf("After deallocate...\n");
         //machine->PrintPageTable();
 
@@ -165,7 +229,20 @@ ExceptionHandler(ExceptionType which)
         AdvancePC();
         currentThread->Finish();
     } 
-    
+    else if((which == SyscallException) && (type == SC_Yield))
+    {
+        printf("user program calls syscall Yield\n");
+        AdvancePC();
+        currentThread->Yield();
+    }
+    else if ((which == SyscallException) && (type == SC_Join))
+    {
+        printf("user program calls syscall Join\n");
+        int threadID = machine->ReadRegister(4);
+        while(threadsID_Array[threadID])
+            currentThread->Yield();
+        AdvancePC();
+    }
     else if(which==PageFaultException)
     {
         printf("Page Fault!\n");
